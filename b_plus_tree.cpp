@@ -762,7 +762,6 @@ void BPlusTree::read_bpt(string filename) {
 		return;
 	}
 	
-	
 	ifstream inputfile;
 	inputfile.open(filename, ios::in);
 	if (!inputfile.is_open()) {
@@ -780,8 +779,7 @@ void BPlusTree::read_bpt(string filename) {
 
 	queue<BPT_Node* > node_queue; //保存上层节点信息，用来建立子节点和父节点的联系
 	Leaf_Node* pre_leaf = NULL; //保存当前叶子节点的前一个叶子节点信息，用来建立叶子节点之间的双向链表
-	while (getline(inputfile, line)) {
-		//由于保存b+树时，节点按行在文件中保存，因此读取时按行进行读取
+	while (getline(inputfile, line)) { //保存b+树时，节点数据按行在文件中保存，因此读取时按行进行读取
 		bool is_leaf;
 		int keys_num;
 
@@ -849,12 +847,13 @@ void BPlusTree::read_bpt(string filename) {
 			}
 		}
 	}
-
-
-
-
-
 }
+
+void BPlusTree::destory_bpt() {
+	return;
+}
+
+
 
 BPlusTree::~BPlusTree() {
 	delete this->bpt_root;
