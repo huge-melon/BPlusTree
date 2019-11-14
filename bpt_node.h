@@ -7,9 +7,26 @@ using namespace std;
 
 class BPT_Node
 {
+
+//protected:
+//	int keys_num;
+//	bool is_leaf;
 public:
 	vector<int> keys;
 	BPT_Node* parent;
+
+	//int get_keysnum() {
+	//	return this->keys_num;
+	//}
+	//void set_keysnum(int num) {
+	//	this->keys_num = num;
+	//}
+	//bool get_isleaf() {
+	//	return this->is_leaf;
+	//}
+	//void set_isleaf(bool flag) {
+	//	this->is_leaf = flag;
+	//}
 	int keys_num;
 	bool is_leaf;
 };

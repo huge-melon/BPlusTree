@@ -1,8 +1,17 @@
 #include "b_plus_tree.h"
 #include <cmath>
 #include <queue>
-
+#include <string>
+#include <fstream>
+#include <sstream>
 // 初始化
+
+BPlusTree::BPlusTree(void) {
+	this->bpt_order = 0;
+	this->bpt_root = NULL;
+	this->min_order = 0;
+	this->leaves_head = NULL;
+}
 BPlusTree::BPlusTree(int order) {
 	this->bpt_order = order;
 	this->bpt_root = NULL;
@@ -695,6 +704,156 @@ void BPlusTree::print_leaves() {
 		p = p->next;
 	}
 	cout << endl;
+}
+
+
+void BPlusTree::save_bpt(string filename) {
+	/*
+		将B+树持久化
+		存储格式：B+树的最大order数，B+数的最小order数
+		从根节点起，从左向右逐层保存每个节点。
+		每个节点的保存格式为：是否为叶子节点、节点内关键码的个数、（若为叶子节点：关键码对应的value）、使用'\n'当作结束符，每项之间通过空格分隔。
+	*/
+	if (this->bpt_root == NULL) {
+		cout << "error tree is empty" << endl;
+		return;
+	}
+
+	ofstream outfile;
+	outfile.open(filename, ios::out | ios::trunc);
+	if (!outfile.is_open()) {
+		cout << "error" << endl;
+		return;
+	}
+	BPT_Node* node_ptr = this->bpt_root;
+	outfile << this->bpt_order << ' ' << this->min_order << endl;
+
+
+	queue<BPT_Node* > node_que;
+	node_que.push(node_ptr);
+	while (!node_que.empty()) {
+
+		node_ptr = node_que.front();
+		node_que.pop();
+		if (node_ptr->is_leaf) {
+			outfile << 1 << ' ' << node_ptr->keys_num << ' ';
+			for (int i = 0; i < node_ptr->keys_num; i++) {
+				outfile << node_ptr->keys[i] << ' ' << ((Leaf_Node*)node_ptr)->values[i] << ' ';
+			}
+			outfile << endl;
+		}
+		else {
+			outfile << 0 << ' ' << node_ptr->keys_num << ' ';
+			for (auto it = node_ptr->keys.begin(); it != node_ptr->keys.end(); it++) {
+				outfile << *it << ' ';
+			}
+			outfile << endl;
+			for (auto it = ((Internal_Node*)node_ptr)->children.begin(); it != ((Internal_Node*)node_ptr)->children.end(); it++) {
+				node_que.push(*it);
+			}
+		}
+	}
+}
+
+void BPlusTree::read_bpt(string filename) {
+	if (this->bpt_root != NULL) {
+		cout << "error, please destory current tree, then try again" << endl;
+		// 只有空时才能建立新的树
+		return;
+	}
+	
+	
+	ifstream inputfile;
+	inputfile.open(filename, ios::in);
+	if (!inputfile.is_open()) {
+		cout << "open file error" << endl;
+		return;
+	}
+
+	string line;
+	getline(inputfile, line);
+	istringstream node_message(line);
+
+	node_message >> this->bpt_order >> this->min_order;
+	// 文件首行保存的是b+树的orders
+	cout << this->bpt_order << " " << this->min_order << endl;
+
+	queue<BPT_Node* > node_queue; //保存上层节点信息，用来建立子节点和父节点的联系
+	Leaf_Node* pre_leaf = NULL; //保存当前叶子节点的前一个叶子节点信息，用来建立叶子节点之间的双向链表
+	while (getline(inputfile, line)) {
+		//由于保存b+树时，节点按行在文件中保存，因此读取时按行进行读取
+		bool is_leaf;
+		int keys_num;
+
+		node_message.clear();
+		node_message.str(line);
+		node_message >> is_leaf >> keys_num;
+
+		if (is_leaf) { // 读取到的是叶子节点
+			Leaf_Node* new_leaf_node = new Leaf_Node();
+			new_leaf_node->is_leaf = true;
+			new_leaf_node->keys_num = keys_num;
+			for (int i = 0; i < keys_num; i++) {
+				int key, value;
+				node_message >> key >> value;
+				new_leaf_node->keys.push_back(key);
+				new_leaf_node->values.push_back(value);
+				//将文件中叶子节点的关键码和键值读取到Leaf_Node中
+			}
+			Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // 寻找其父节点
+			if (parent_node->keys_num + 1 == parent_node->children.size()) {
+				node_queue.pop(); // 队首节点的childern已满，所以队首下一个节点才是该节点的父节点
+				parent_node = (Internal_Node*)node_queue.front();
+			}
+			new_leaf_node->parent = parent_node;
+			parent_node->children.push_back(new_leaf_node);
+			// 叶子节点不需要添加到node_queue中，因为其没有儿子节点
+
+			if (pre_leaf == NULL) { // 该节点是第一个叶子节点，处于队首
+				this->leaves_head = new_leaf_node;
+				new_leaf_node->pre = NULL;
+				new_leaf_node->next = NULL;
+				pre_leaf = new_leaf_node; // pre_leaf指向当前叶子节点的前一个叶子节点
+			}
+			else {
+				new_leaf_node->next = NULL;
+				new_leaf_node->pre = pre_leaf;
+				pre_leaf->next = new_leaf_node; // 建立双向链表
+				pre_leaf = new_leaf_node; // pre_leaf指向当前叶子节点的前一个叶子节点
+			}
+		}
+		else { // 读取到的是内部节点
+			Internal_Node* new_inter_node = new Internal_Node();
+			new_inter_node->is_leaf = false;
+			new_inter_node->keys_num = keys_num;
+			for (int i = 0; i < keys_num; i++) { //从文件中读取内部节点的关键码，插入到Internal_Node中
+				int key;
+				node_message >> key;
+				new_inter_node->keys.push_back(key);
+			}
+
+			if (node_queue.empty()) {
+				this->bpt_root = new_inter_node; // 队列为空，说明该节点是根节点
+				new_inter_node->parent = NULL;
+				node_queue.push(new_inter_node);
+			}
+			else {
+				Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // 队列不为空，则处于队首的节点是该节点的父节点
+				if (parent_node->keys_num + 1 == parent_node->children.size()) {
+					node_queue.pop(); // 队首节点的childern已满，所以队首下一个节点才是该节点的父节点
+					parent_node = (Internal_Node*)node_queue.front();
+				}
+				new_inter_node->parent = parent_node;
+				parent_node->children.push_back(new_inter_node); // 将该节点插入到父节点的children中
+				node_queue.push(new_inter_node); // 将该节点插入到队列中，等待与之后的节点建立父子联系
+			}
+		}
+	}
+
+
+
+
+
 }
 
 BPlusTree::~BPlusTree() {

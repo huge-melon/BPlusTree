@@ -1,12 +1,13 @@
 #ifndef b_plus_tree_h
 #define b_plus_tree_h
 
-
 #include "bpt_node.h"
+#include <string>
 
 class BPlusTree
 {
 public:
+	BPlusTree();
 	BPlusTree(int order);
 	~BPlusTree();
 	void insert_data(int key, int value); // done
@@ -14,6 +15,10 @@ public:
 	void update_data(int key, int new_vlaue); // done
 	int search_data(int key); // done
 	void remove_data(int key);
+
+	void save_bpt(string filename);
+	void read_bpt(string filename);
+	void destory_bpt();
 
 	void print_leaves();
 	void print_tree();

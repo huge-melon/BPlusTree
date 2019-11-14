@@ -7,7 +7,7 @@ using namespace std;
 
 int main(void)
 {
-	cout << 1 << endl;
+	/*cout << 1 << endl;
 	BPlusTree t1(8);
 	cout << 2 << endl;
 
@@ -45,6 +45,8 @@ int main(void)
 
 	}
 
+	t1.save_bpt("D:/tree.txt");
+
 
 	for (int i = 1; i < M; i++) {
 		t1.remove_data(i);
@@ -56,8 +58,11 @@ int main(void)
 	for (int i = 1; i < M; i++) {
 		cout << t1.search_data(i) << endl;
 
-	}
+	}*/
 
+	BPlusTree t1;
+	t1.read_bpt("D:/tree.txt");
+	t1.print_tree();
 	system("pause");
 	return 0;
 }
