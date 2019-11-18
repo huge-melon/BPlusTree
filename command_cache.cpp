@@ -1,6 +1,6 @@
 #include "command_cache.h"
 #include <ctime>
-#include <Windows.h>
+#include <unistd.h>
 #include <sstream>
 
 #define MAX_RANDNUM 9223372036854775807
@@ -19,27 +19,31 @@ ComBuffer::~ComBuffer()
 
 }
 
-
+// å½“å‰æ—¶é—´
+// ç¼“å­˜åŒºå¤§å°
+// æ ‘çš„èŠ‚ç‚¹ä¸ªæ•°
+// CPUå ç”¨ç‡
+// å†…å­˜å ç”¨ç‡
 void ComBuffer::add_command(MyCommand com) {
 	
-	unique_lock<mutex> pvlock(this->pv_mtx); // »ñµÃ»¥³âËø
+	unique_lock<mutex> pvlock(this->pv_mtx); // è·å¾—äº’æ–¥é”
 	while ((this->TaskBuffer).size() == this->buffer_size) {
-		// ÃüÁî»º´æÇøÒÑÂú
-		cout << "$$Task producer is waiting for an empty slot¡£##" << endl;
+		// å‘½ä»¤ç¼“å­˜åŒºå·²æ»¡
+		cout <<"ç”Ÿäº§è€…çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<<" è¢«é˜»å¡ï¼ˆç¼“å­˜åŒºå·²æ»¡ï¼‰" << endl;
 		(this->buffer_not_full).wait(pvlock);
 	}
 
 	TaskBuffer.push(com);
 	(this->buffer_not_empty).notify_all();
-	// »º´æÇø²»Îª¿Õ£¬»½ĞÑ±»×èÈûµÄÏû·ÑÕßÏß³Ì
+	// ç¼“å­˜åŒºä¸ä¸ºç©ºï¼Œå”¤é†’è¢«é˜»å¡çš„æ¶ˆè´¹è€…çº¿ç¨‹
 	//pvlock.unlock();
 
 }
 
 void ComBuffer::take_command() {
-	unique_lock<mutex> pvlock(this->pv_mtx); // »ñµÃ»¥³âËø
+	unique_lock<mutex> pvlock(this->pv_mtx); // è·å¾—äº’æ–¥é”
 	while ((this->TaskBuffer).size() == 0) {
-		cout << "$$Task take_command is waiting for commands.##" << endl;
+		cout <<"æ¶ˆè´¹è€…çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<<" è¢«é˜»å¡ï¼ˆç¼“å­˜åŒºä¸ºç©ºï¼‰" << endl;
 		(this->buffer_not_empty).wait(pvlock);
 	}
 
@@ -60,12 +64,9 @@ void ComBuffer::take_command() {
 
 	}
 	else {
-		cout << "$$Invalid command##" << endl;
+		cout <<"æ¶ˆè´¹è€…çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<<" è¯»å–åˆ°éæ³•å‘½ä»¤" << endl;
 	}
 
-
-	std::cout << "$$Consumer thread " << std::this_thread::get_id()
-		<< " is taking command. ##" << std::endl;
 	(this->buffer_not_full).notify_all();
 	//pvlock.unlock();
 }
@@ -77,11 +78,11 @@ void ComBuffer::ProducerTask() {
 	srand((unsigned)time(NULL) - (tid << 4));
 
 	while (1) {
-		Sleep(1);
+		sleep(1);
 		unique_lock<mutex> product_lock(this->produced_mtx);
 		MyCommand com;
 		
-		// Éú³É1-4 ËÄ¸öËæ»úÊı£¬¶ÔÓ¦²»Í¬µÄ²Ù×÷
+		// ç”Ÿæˆ1-4 å››ä¸ªéšæœºæ•°ï¼Œå¯¹åº”ä¸åŒçš„æ“ä½œ
 
 		//cout << "$$time:" << (unsigned)time(NULL) <<"##"<< endl;
 		switch (rand()%5)
@@ -89,56 +90,67 @@ void ComBuffer::ProducerTask() {
 		case 0: 
 		{
 			com.operation = "insert";
-			com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
-			com.value = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.value = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			com.key = rand();
+			com.value = rand();
+
 			//com.key = ((double)rand())/RAND_MAX * MAX_RANDNUM;
 			//com.value = ((double)rand()) / RAND_MAX * MAX_RANDNUM;
-			if (com.key < 0 || com.value <0)
-			cout << endl << endl << "############################"<< "insert: " << com.key << ' ' << com.value << endl << "############################" << endl << endl;
+			// if (com.key < 0 || com.value <0)
+			// cout << endl << endl << "############################"<< "insert: " << com.key << ' ' << com.value << endl << "############################" << endl << endl;
 		}
 			break;
 		case 1: 
 		{
 			com.operation = "remove";
-			com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			com.key = rand();
 		}
 			break;
 		case 2:
 		{
 			com.operation = "search";
-			com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			com.key = rand();
+
 		}
 			break;
 		case 3:
 		{
 			com.operation = "update";
-			com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
-			com.value = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.value = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			com.key = rand();
+			com.value = rand();
+
 		}
 			break;
 		default: 
 		{
 			com.operation = "insert";
-			com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
-			com.value = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.key = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			// com.value = ((long long)rand() << 0x30) | ((long long)rand() << 0x21) | ((long long)rand() << 0x12) | ((long long)rand() << 0x03) | ((long long)rand() >> 0x0C);
+			com.key = rand();
+			com.value = rand();
 		}
 			break;
 		}
 		add_command(com);
 		//std::cout << "$$Producer thread " << std::this_thread::get_id()
 		//	<< " is producing the item##" << std::endl;
-		// Ö´ĞĞÊ²Ã´²Ù×÷´òÓ¡³öÀ´
+		// æ‰§è¡Œä»€ä¹ˆæ“ä½œæ‰“å°å‡ºæ¥
 		//product_lock.unlock();
 	}
 
 }
 void ComBuffer::ConsumerTask() {
 	while (1) {
-		Sleep(1);
+		sleep(1);
 
 		unique_lock<mutex> consumer_lock(this->consumed_mtx);
 		take_command();
-		// ·µ»ØÖ´ĞĞµÄ ½á¹û£¬ ĞèÒªÔÚB+Ê÷ÖĞÌí¼Ó½á¹û·µ»Ø
+		// è¿”å›æ‰§è¡Œçš„ ç»“æœï¼Œ éœ€è¦åœ¨B+æ ‘ä¸­æ·»åŠ ç»“æœè¿”å›
 		//std::cout << "$$Consumer thread " << std::this_thread::get_id()
 		//	<< " is consuming the item##" << std::endl;
 		//consumed_mtx.unlock();

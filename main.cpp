@@ -50,7 +50,7 @@
 //
 //	for (int i = 1; i < M; i++) {
 //		t1.remove_data(i);
-//		cout << "delete £º" << i << endl;
+//		cout << "delete ï¼š" << i << endl;
 //	}
 //
 //	t1.print_tree();
@@ -68,18 +68,18 @@
 //}
 
 
-// ÐèÒªÐÞ¸ÄÊäÈëÊä³ö£¬¸÷¸ö²Ù×÷µÄÊä³ö
-// ²âÊÔµÄÊ±ºò¸ôÒ»¶ÎÊÂ¼þ¼ÇÂ¼ÒÔÏÂËãÁË
+// éœ€è¦ä¿®æ”¹è¾“å…¥è¾“å‡ºï¼Œå„ä¸ªæ“ä½œçš„è¾“å‡º
+// æµ‹è¯•çš„æ—¶å€™éš”ä¸€æ®µäº‹ä»¶è®°å½•ä»¥ä¸‹ç®—äº†
 
-// ÏÈ²åÈë1ÒÚÌõÊý¾Ý½øÈ¥£¬·µ»ØÔËÐÐÊÂ¼þ£¬È»ºó·Ö±ð²âÊÔ¸÷¸ö¹¦ÄÜµÄÕýÈ·ÐÔ
+// å…ˆæ’å…¥1äº¿æ¡æ•°æ®è¿›åŽ»ï¼Œè¿”å›žè¿è¡Œäº‹ä»¶ï¼Œç„¶åŽåˆ†åˆ«æµ‹è¯•å„ä¸ªåŠŸèƒ½çš„æ­£ç¡®æ€§
 
-// ¿ªÆô¶àÏß³Ì£¬ÏÈ²åÈënÌõÊý¾Ý£¬Ö®ºóÔÙ¿ªÊ¼¶àÏß³Ì
+// å¼€å¯å¤šçº¿ç¨‹ï¼Œå…ˆæ’å…¥næ¡æ•°æ®ï¼Œä¹‹åŽå†å¼€å§‹å¤šçº¿ç¨‹
 
-// ¶¨Ê±Æô¶¯Ò»¸öÏß³Ì´òÓ¡ËùÓÐµÄÊý¾ÝÐÅÏ¢£¿
+// å®šæ—¶å¯åŠ¨ä¸€ä¸ªçº¿ç¨‹æ‰“å°æ‰€æœ‰çš„æ•°æ®ä¿¡æ¯ï¼Ÿ
 
 #include <iostream>
 #include <thread>
-#include <Windows.h>
+#include <unistd.h>
 #include "command_cache.h"
 int main()
 {
@@ -109,37 +109,5 @@ int main()
 	consumer3.join();
 	consumer4.join();
 
-	cout << RAND_MAX << endl;
-	system("pause");
-}
 
-//
-//#include <iostream>
-//#include <thread>
-//#include <Windows.h>
-//#include <mutex>
-//#include <string>
-//
-//using namespace std;
-//
-//std::mutex mtx;           // mutex for critical section
-//
-//void print_block(int n, string c) {
-//	// critical section (exclusive access to std::cout signaled by lifetime of lck):
-//	std::unique_lock<std::mutex> lck(mtx);
-//	for (int i = 0; i < n; ++i) {
-//		std::cout << c;
-//	}
-//	std::cout << '\n';
-//}
-//
-//int main()
-//{
-//	std::thread th1(print_block, 50, "thrid hsidnfgi sdiognisdfo isdfon isdo");
-//	std::thread th2(print_block, 50, "sdgaoejgnaogia jio ajgionseiogn ioaegioaweo aeiognioawepgh ");
-//
-//	th1.join();
-//	th2.join();
-//	system("pause");
-//	return 0;
-//}
+}

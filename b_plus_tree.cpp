@@ -4,7 +4,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-// ³õÊ¼»¯
+#include <thread>
 
 BPlusTree::BPlusTree(void) {
 	this->bpt_order = 0;
@@ -19,10 +19,9 @@ BPlusTree::BPlusTree(int order) {
 	this->leaves_head = NULL;
 }
 
-// ½ÚµãÎ´ÂúÖ±½Ó²åÈë 
 
 void BPlusTree::insert_directly(BPT_Node* insert_pos, long long key, void* value) {
-
+// å°†keyå’Œvalue æ’å…¥åˆ° insert_posæ‰€æŒ‡å‘çš„èŠ‚ç‚¹ä¸­
 	for (int i = 0; i < insert_pos->keys_num; i++) {
 		if (insert_pos->keys[i] > key) {
 			insert_pos->keys.insert(insert_pos->keys.begin() + i, key);
@@ -35,7 +34,7 @@ void BPlusTree::insert_directly(BPT_Node* insert_pos, long long key, void* value
 			return;
 		}
 		else if (insert_pos->keys[i] == key) {
-			cout << "¹Ø¼üÂëÖØ¸´" << endl;
+			// cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " æ’å…¥key: "<<key<<" value:"<<value<<" å‡ºç°é”™è¯¯ï¼ˆå…³é”®ç é‡å¤ï¼‰" << endl;
 			return;
 		}
 	}
@@ -60,15 +59,15 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 	int right_num = all_num - left_num;
 
 	long long middle_key;
-	// assign(begin, end) ´Óbegin  (0ÆğÊ¼)ËùÖ¸µÄµØ·½Ò»Ö±¸´ÖÆµ½endµÄÇ°Ò»¸öÎ»ÖÃ
-	// eraser(begin, end) ´Óbegin  (0ÆğÊ¼)ËùÖ¸µÄµØ·½ É¾³ıµ½endµÄÇ°Ò»¸öÎ»ÖÃ
+	// assign(begin, end) ä»begin  (0èµ·å§‹)æ‰€æŒ‡çš„åœ°æ–¹ä¸€ç›´å¤åˆ¶åˆ°endçš„å‰ä¸€ä¸ªä½ç½®
+	// eraser(begin, end) ä»begin  (0èµ·å§‹)æ‰€æŒ‡çš„åœ°æ–¹ åˆ é™¤åˆ°endçš„å‰ä¸€ä¸ªä½ç½®
 	if (split_pos->is_leaf == true) {
 
 		middle_key = split_pos->keys[left_num];
 		new_node = new Leaf_Node();
 		Leaf_Node* new_leaf = (Leaf_Node*)new_node;
 		Leaf_Node* leaf_split_pos = (Leaf_Node*)split_pos;
-		// ·ÖÁÑºóÖ»ÓĞÒ»¸ö½ÚµãµÄÇé¿ö
+		// åˆ†è£‚ååªæœ‰ä¸€ä¸ªèŠ‚ç‚¹çš„æƒ…å†µ
 		new_leaf->keys_num = right_num;
 		new_leaf->is_leaf = true;
 		new_leaf->keys.assign(leaf_split_pos->keys.begin() + left_num, leaf_split_pos->keys.end());
@@ -92,6 +91,10 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 	else {
 		middle_key = split_pos->keys[left_num - 1];
 		new_node = new Internal_Node();
+		if (new_node== NULL) {
+			// cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " insertæ“ä½œé”™è¯¯ï¼ˆå†…å­˜åˆ†é…å¤±è´¥ï¼‰" << endl;
+			return;
+		}
 		Internal_Node* new_internal = (Internal_Node*)new_node;
 		Internal_Node* internal_split_pos = (Internal_Node*)split_pos;
 
@@ -109,12 +112,16 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 		internal_split_pos->keys.erase(internal_split_pos->keys.begin() + left_num - 1, internal_split_pos->keys.end());
 		internal_split_pos->children.erase(internal_split_pos->children.begin() + left_num, internal_split_pos->children.end());
 	}
-	// middle_key ÊÇÓ¦¸Ã²åÈëµ½parent_nodeµÄ¹Ø¼üÂë        new_nodeÊÇĞÂµÄ½Úµã
+	// middle_key æ˜¯åº”è¯¥æ’å…¥åˆ°parent_nodeçš„å…³é”®ç         new_nodeæ˜¯æ–°çš„èŠ‚ç‚¹
 
 	BPT_Node* parent_node = split_pos->parent;
 
 	if (parent_node == NULL) {
 		parent_node = new Internal_Node();
+		if (parent_node== NULL) {
+			// cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " insertæ“ä½œé”™è¯¯ï¼ˆå†…å­˜åˆ†é…å¤±è´¥ï¼‰" << endl;
+			return;
+		}
 		parent_node->is_leaf = false;
 		parent_node->keys_num++;
 		parent_node->keys.push_back(middle_key);
@@ -145,17 +152,16 @@ void BPlusTree::insert_data(long long key, long long value) {
 
 		this->leaves_head = (Leaf_Node*)bpt_root;
 		if (this->bpt_root == NULL) {
-			cout << "request mem error" << endl;
+			// cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " insertæ“ä½œé”™è¯¯ï¼ˆå†…å­˜åˆ†é…å¤±è´¥ï¼‰" << endl;
+			return;
 		}
 
 		insert_directly(bpt_root, key, &value);
 		return;
 	}
-
-
 	insert_directly(insert_pos, key, &value);
 
-	// ÏÈ²åÈëÔÙ¼ì²éÊÇ·ñ£¬³¬¹ıorderµÄÏŞÖÆ
+	// å…ˆæ’å…¥å†æ£€æŸ¥æ˜¯å¦ï¼Œè¶…è¿‡orderçš„é™åˆ¶
 	if (insert_pos->keys_num > bpt_order - 1) {
 		node_split(insert_pos);
 	}
@@ -213,192 +219,12 @@ int BPlusTree::search_data(long long key) {
 void BPlusTree::update_data(long long key, long long new_value) {
 	long long *value = find_data_ptr(key);
 	if (value == NULL) {
-		cout << "not found" << endl;
+		// cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " update æ“ä½œé”™è¯¯ ï¼ˆkey: "<<key<<" ä¸å­˜åœ¨ï¼‰" << endl;
 		return;
 	}
 	*value = new_value;
 	return;
 }
-
-
-//Leaf_Node* BPlusTree::find_delete_pos(int key) {
-//	Leaf_Node *node_ptr = find_node_ptr(key);
-//
-//
-//	return NULL;
-//}
-//
-//void BPlusTree::delete_directly(Leaf_Node* delete_pos, int key) {
-//	// É¾¿ÕµÄÇé¿ö??
-//
-//	for (int i = 0; i < delete_pos->keys_num; i++) {
-//		if (delete_pos->keys[i] == key) {
-//			if (i == 0) {
-//				// ĞŞ¸Ä¸¸½Úµã
-//				for (int j = 0; j < delete_pos->parent->keys_num; j++) {
-//					if (delete_pos->parent->keys[j] == key) {
-//						if (delete_pos->keys_num > 1) {
-//							delete_pos->parent->keys[j] == delete_pos->keys[1];
-//						}
-//						else {
-//							delete_pos->parent->keys.erase(delete_pos->parent->keys.begin() + j);
-//							((Internal_Node*)delete_pos->parent)->children.erase(((Internal_Node*)delete_pos->parent)->children.begin() + j + 1);
-//						}
-//						break;
-//					}
-//				}
-//			}
-//			delete_pos->keys.erase(delete_pos->keys.begin() + i);
-//			delete_pos->values.erase(delete_pos->values.begin() + i);
-//			delete_pos->keys_num--;
-//			break;
-//		}
-//	}
-//}
-//
-//
-//void BPlusTree::borrow_from_left(BPT_Node* raw_node, BPT_Node* left_node) {
-//	if (raw_node->is_leaf) {
-//		Internal_Node* parent = (Internal_Node*)raw_node->parent;
-//		//delete_directly É¾µÄÊ±ºòÓ¦¸ÃÁ¬´ø°Ñ¸¸½ÚµãÖĞµÄÒ²Ìæ»»ÁË
-//		int raw_internal_node_key = raw_node->keys.front();
-//
-//		int key_moved = left_node->keys.back();
-//		left_node->keys.pop_back();
-//		int value_moved = ((Leaf_Node*)left_node)->values.back();
-//		((Leaf_Node*)left_node)->values.pop_back();
-//		left_node->keys_num--;
-//
-//		raw_node->keys.insert(raw_node->keys.begin(), key_moved);
-//		((Leaf_Node*)raw_node)->values.insert(((Leaf_Node*)raw_node)->values.begin(), value_moved);
-//		raw_node->keys_num++;
-//		// insert_directly(delete_pos, key_moved, &value_moved);
-//
-//		for (auto it = parent->keys.begin(); it != parent->keys.end(); it++) {
-//			if (*it == raw_internal_node_key) {
-//				*it = key_moved;
-//				break;
-//			}
-//		}
-//	}
-//	else {
-//
-//	}
-//
-//}
-//void BPlusTree::borrow_from_right(BPT_Node* raw_node, BPT_Node* right_node) {
-//	if (raw_node->is_leaf) {
-//		Internal_Node* parent = (Internal_Node*)raw_node->parent;
-//
-//		int key_moved = right_node->keys.front();
-//		right_node->keys.erase(right_node->keys.begin());
-//
-//		int value_moved = ((Leaf_Node*)right_node)->values.front();
-//		((Leaf_Node*)right_node)->values.erase(((Leaf_Node*)right_node)->values.begin());
-//		right_node->keys_num--;
-//
-//		((Leaf_Node*)raw_node)->keys.push_back(key_moved);
-//		((Leaf_Node*)raw_node)->values.push_back(value_moved);
-//		((Leaf_Node*)raw_node)->keys_num++;
-//
-//		for (auto it = parent->keys.begin(); it != parent->keys.end(); it++) {
-//			if (*it == key_moved) {
-//				*it = right_node->keys.front();
-//				break;
-//			}
-//		}
-//	}
-//	else {
-//
-//	}
-//
-//}
-//
-//void BPlusTree::merge_with_left(BPT_Node* raw_node, BPT_Node* left_node) {
-//	if (raw_node->is_leaf) {
-//		((Leaf_Node*)left_node)->keys.insert(((Leaf_Node*)left_node)->keys.end(), ((Leaf_Node*)raw_node)->keys.begin(), ((Leaf_Node*)raw_node)->keys.end());
-//		((Leaf_Node*)left_node)->values.insert(((Leaf_Node*)left_node)->values.end(), ((Leaf_Node*)raw_node)->values.begin(), ((Leaf_Node*)raw_node)->values.end());
-//		((Leaf_Node*)left_node)->next = ((Leaf_Node*)raw_node)->next;
-//		if (((Leaf_Node*)raw_node)->next != NULL) {
-//			((Leaf_Node*)raw_node)->next->pre = ((Leaf_Node*)left_node);
-//		}
-//		left_node->keys_num += raw_node->keys_num;
-//
-//		for (int i = 0; i < raw_node->parent->keys_num + 1; i++) {
-//			if (((Internal_Node*)raw_node->parent)->children[i] == raw_node) {
-//				((Internal_Node*)raw_node->parent)->children.erase(((Internal_Node*)raw_node->parent)->children.begin() + i);
-//				raw_node->parent->keys.erase(raw_node->parent->keys.begin() + i - 1);
-//				raw_node->parent->keys_num--;
-//				break;
-//			}
-//		}
-//
-//		delete(raw_node);
-//		// raw_node->parent->keys.erase
-//
-//		// for(int i=0; i < raw_node->keys_num; i++){
-//		// 	((Leaf_Node*)left_node)->keys.push_back(((Leaf_Node*)raw_node)->keys[i]);
-//		// 	((Leaf_Node*)left_node)->values.push_back(((Leaf_Node*)raw_node)->values[i]);
-//		// 	((Leaf_Node*)left_node)->keys_num++;
-//		// }
-//	}
-//	else {
-//
-//	}
-//}
-//
-//void BPlusTree::merge_with_right(BPT_Node* raw_node, BPT_Node* right_node) {
-//	if (raw_node->is_leaf) {
-//		raw_node->keys.insert(raw_node->keys.end(), right_node->keys.begin(), right_node->keys.end());
-//		((Leaf_Node*)raw_node)->values.insert(((Leaf_Node*)raw_node)->values.end(), ((Leaf_Node*)right_node)->values.begin(), ((Leaf_Node*)right_node)->values.end());
-//
-//		raw_node->keys_num += right_node->keys_num;
-//
-//		((Leaf_Node*)raw_node)->next = ((Leaf_Node*)right_node)->next;
-//		if (((Leaf_Node*)raw_node)->next != NULL) {
-//			((Leaf_Node*)right_node)->next->pre = (Leaf_Node*)raw_node;
-//		}
-//
-//		for (int i = 0; i < right_node->parent->keys_num + 1; i++) {
-//			if (((Internal_Node*)right_node->parent)->children[i] == right_node) {
-//				((Internal_Node*)right_node->parent)->children.erase(((Internal_Node*)right_node->parent)->children.begin() + i);
-//				right_node->parent->keys.erase(right_node->parent->keys.begin() + i - 1);
-//				right_node->parent->keys_num--;
-//				break;
-//			}
-//		}
-//
-//
-//		delete(right_node);
-//
-//	}
-//	else {
-//
-//	}
-//}
-
-
-
-//pair<BPT_Node*, BPT_Node*> find_brothers(BPT_Node* raw_node) {
-//	int child_num = -1;
-//	Internal_Node* parent = (Internal_Node*)raw_node->parent;
-//	for (int i = 0; i < parent->keys_num + 1; i++) {
-//		if (parent->children[i] == raw_node) {
-//			child_num = i;
-//			break;
-//		}
-//	}
-//	BPT_Node* left_bro = NULL;
-//	BPT_Node* right_bro = NULL;
-//	if (child_num - 1 >= 0) {
-//		left_bro = parent->children[child_num - 1];
-//	}
-//	if (child_num + 1 < parent->keys_num + 1) {
-//		right_bro = parent->children[child_num + 1];
-//	}
-//	return std::pair<BPT_Node*, BPT_Node*>(left_bro, right_bro);
-//}
-
 
 int BPlusTree::find_child_num(BPT_Node* raw_node) {
 	int child_num = -1;
@@ -414,7 +240,7 @@ int BPlusTree::find_child_num(BPT_Node* raw_node) {
 void BPlusTree::remove_data(long long key) {
 	Leaf_Node* delete_pos = find_node_ptr(key);
 	if (delete_pos == NULL) {
-		cout << "Ã»ÕÒµ½" << endl;
+		// cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " deleteæ“ä½œé”™è¯¯ ï¼ˆkey: "<<key<<" ä¸å­˜åœ¨ï¼‰" << endl;
 		return;
 	}
 	bool is_exist = false;
@@ -429,7 +255,7 @@ void BPlusTree::remove_data(long long key) {
 		}
 	}
 	if (!is_exist) {
-		cout << "Ã»ÕÒµ½" << endl;
+		// cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " deleteæ“ä½œé”™è¯¯ ï¼ˆkey: "<<key<<" æœªæ‰¾åˆ°ï¼‰" << endl;
 		return;
 	}
 
@@ -447,7 +273,7 @@ void BPlusTree::remove_data(long long key) {
 		}
 
 		if (left_node != NULL && left_node->keys_num >= this->min_order) {
-			// ´Ó×óĞÖµÜ½Úµã½èÒ»¸ökey
+			// ä»å·¦å…„å¼ŸèŠ‚ç‚¹å€Ÿä¸€ä¸ªkey
 			delete_pos->keys.insert(delete_pos->keys.begin(), left_node->keys.back());
 			((Leaf_Node*)delete_pos)->values.insert(((Leaf_Node*)delete_pos)->values.begin(), left_node->values.back());
 			delete_pos->keys_num++;
@@ -461,7 +287,7 @@ void BPlusTree::remove_data(long long key) {
 
 		}
 		else if (right_node != NULL && right_node->keys_num >= this->min_order) {
-			// ´ÓÓÒĞÖµÜ½Úµã½èÒ»¸ökey
+			// ä»å³å…„å¼ŸèŠ‚ç‚¹å€Ÿä¸€ä¸ªkey
 			delete_pos->keys.push_back(right_node->keys.front());
 			((Leaf_Node*)delete_pos)->values.push_back(right_node->values.front());
 			delete_pos->keys_num++;
@@ -476,7 +302,7 @@ void BPlusTree::remove_data(long long key) {
 		}
 		else {
 			if (left_node != NULL && left_node->keys_num < this->min_order) {
-				// Óë×óĞÖµÜ½øĞĞºÏ²¢, ½«µ±Ç°½Úµã²åÈëµ½×óĞÖµÜ½ÚµãµÄºó±ß
+				// ä¸å·¦å…„å¼Ÿè¿›è¡Œåˆå¹¶, å°†å½“å‰èŠ‚ç‚¹æ’å…¥åˆ°å·¦å…„å¼ŸèŠ‚ç‚¹çš„åè¾¹
 				left_node->keys.insert(left_node->keys.end(), delete_pos->keys.begin(), delete_pos->keys.end());
 				left_node->values.insert(left_node->values.begin(), ((Leaf_Node*)delete_pos)->values.begin(), ((Leaf_Node*)delete_pos)->values.end());
 
@@ -486,17 +312,17 @@ void BPlusTree::remove_data(long long key) {
 				}
 				left_node->keys_num += delete_pos->keys_num;
 
-				delete_pos->parent->keys.erase(delete_pos->parent->keys.begin() + child_num - 1); // ´Ó¸¸½ÚµãÖĞÉ¾³ı¸Ã½ÚµãµÄĞÅÏ¢
+				delete_pos->parent->keys.erase(delete_pos->parent->keys.begin() + child_num - 1); // ä»çˆ¶èŠ‚ç‚¹ä¸­åˆ é™¤è¯¥èŠ‚ç‚¹çš„ä¿¡æ¯
 				((Internal_Node*)delete_pos->parent)->children.erase(((Internal_Node*)delete_pos->parent)->children.begin() + child_num);
 				delete_pos->parent->keys_num--;
 
-				delete delete_pos; // ÊÍ·ÅÄÚ´æ
+				delete delete_pos; // é‡Šæ”¾å†…å­˜
 				delete_pos = left_node;
 
 
 			}
 			else if (right_node != NULL && right_node->keys_num < this->min_order) {
-				// ÓëÓÒĞÖµÜ½øĞĞºÏ²¢, ½«ÓÒĞÖµÜ½ÚµãµÄĞÅÏ¢²åÈëµ½µ±Ç°½ÚµãµÄºó±ß
+				// ä¸å³å…„å¼Ÿè¿›è¡Œåˆå¹¶, å°†å³å…„å¼ŸèŠ‚ç‚¹çš„ä¿¡æ¯æ’å…¥åˆ°å½“å‰èŠ‚ç‚¹çš„åè¾¹
 				delete_pos->keys.insert(delete_pos->keys.end(), right_node->keys.begin(), right_node->keys.end());
 				((Leaf_Node*)delete_pos)->values.insert(((Leaf_Node*)delete_pos)->values.end(), right_node->values.begin(), right_node->values.end());
 
@@ -512,14 +338,14 @@ void BPlusTree::remove_data(long long key) {
 
 				delete right_node;
 			}
-			Internal_Node* del_inter_pos = (Internal_Node*)delete_pos; // ¶ÔÄÚ²¿½Úµã½øĞĞºÏ²¢
+			Internal_Node* del_inter_pos = (Internal_Node*)delete_pos; // å¯¹å†…éƒ¨èŠ‚ç‚¹è¿›è¡Œåˆå¹¶
 			
 			while (del_inter_pos->parent != this->bpt_root) {
 				Internal_Node *left_inter_node = NULL;
 				Internal_Node *right_inter_node = NULL;
 				del_inter_pos = (Internal_Node*)del_inter_pos->parent;
 
-				if (del_inter_pos->keys_num >= this->min_order - 1) { // ¸¸½ÚµãkeyµÄ¸öÊı´óÓÚ×îµÍÏŞÖÆ£¬²»ĞèÒª²Ù×÷
+				if (del_inter_pos->keys_num >= this->min_order - 1) { // çˆ¶èŠ‚ç‚¹keyçš„ä¸ªæ•°å¤§äºæœ€ä½é™åˆ¶ï¼Œä¸éœ€è¦æ“ä½œ
 					return;
 				}
 				int child_inter_num = find_child_num(del_inter_pos);
@@ -532,7 +358,7 @@ void BPlusTree::remove_data(long long key) {
 				}
 
 				if (right_inter_node != NULL && right_inter_node->keys_num >= this->min_order) {
-					// ´ÓÓÒĞÖµÜ½è
+					// ä»å³å…„å¼Ÿå€Ÿ
 					del_inter_pos->keys.push_back(del_inter_pos->parent->keys[child_inter_num]);
 					del_inter_pos->children.push_back(right_inter_node->children.front());
 					del_inter_pos->parent->keys[child_inter_num] = right_inter_node->keys.front();
@@ -547,7 +373,7 @@ void BPlusTree::remove_data(long long key) {
 					return;
 				}
 				else if (left_inter_node != NULL && left_inter_node->keys_num >= this->min_order) {
-					// ´Ó×óĞÖµÜ½è
+					// ä»å·¦å…„å¼Ÿå€Ÿ
 					del_inter_pos->children.insert(del_inter_pos->children.begin(), left_inter_node->children.back());
 					del_inter_pos->keys.insert(del_inter_pos->keys.begin(), del_inter_pos->parent->keys[child_inter_num - 1]);
 					del_inter_pos->parent->keys[child_inter_num] = left_inter_node->keys.back();
@@ -562,7 +388,7 @@ void BPlusTree::remove_data(long long key) {
 				}
 				else {
 					if (left_inter_node != NULL && left_inter_node->keys_num < this->min_order) { 
-						// ºÍ×óĞÖµÜºÏ²¢
+						// å’Œå·¦å…„å¼Ÿåˆå¹¶
 						left_inter_node->children.insert(left_inter_node->children.end(), del_inter_pos->children.begin(), del_inter_pos->children.end());
 						left_inter_node->keys.insert(left_inter_node->keys.end(), del_inter_pos->parent->keys[child_inter_num - 1]);
 						left_inter_node->keys.insert(left_inter_node->keys.end(), del_inter_pos->keys.begin(), del_inter_pos->keys.end());
@@ -575,14 +401,14 @@ void BPlusTree::remove_data(long long key) {
 						((Internal_Node*)del_inter_pos->parent)->children.erase(((Internal_Node*)del_inter_pos->parent)->children.begin() + child_inter_num);
 						del_inter_pos->parent->keys_num--;
 
-						delete del_inter_pos; // ÊÍ·ÅÄÚ´æ
+						delete del_inter_pos; // é‡Šæ”¾å†…å­˜
 						del_inter_pos = left_inter_node;
 
 
 
 					}
 					else if (right_inter_node != NULL && right_inter_node->keys_num < this->min_order) {
-						// ºÍÓÒĞÖµÜºÏ²¢£¬½«µ±Ç°½ÚµãĞÅÏ¢²åÈëµ½ÓÒĞÖµÜµÄÍ·²¿
+						// å’Œå³å…„å¼Ÿåˆå¹¶ï¼Œå°†å½“å‰èŠ‚ç‚¹ä¿¡æ¯æ’å…¥åˆ°å³å…„å¼Ÿçš„å¤´éƒ¨
 						right_inter_node->children.insert(right_inter_node->children.begin(), del_inter_pos->children.begin(), del_inter_pos->children.end());
 						right_inter_node->keys.insert(right_inter_node->keys.begin(), del_inter_pos->parent->keys[child_inter_num]);
 						right_inter_node->keys.insert(right_inter_node->keys.begin(), del_inter_pos->keys.begin(), del_inter_pos->keys.end());
@@ -590,12 +416,12 @@ void BPlusTree::remove_data(long long key) {
 						for (int i = 0; i < del_inter_pos->keys_num + 1; i++) {
 							del_inter_pos->children[i]->parent = right_inter_node;
 						}
-						// ´Ó¸Ã½ÚµãµÄ¸¸½ÚµãÖĞÉ¾³ı¸Ã½ÚµãµÄĞÅÏ¢
+						// ä»è¯¥èŠ‚ç‚¹çš„çˆ¶èŠ‚ç‚¹ä¸­åˆ é™¤è¯¥èŠ‚ç‚¹çš„ä¿¡æ¯
 						del_inter_pos->parent->keys.erase(del_inter_pos->parent->keys.begin() + child_inter_num);
 						((Internal_Node*)del_inter_pos->parent)->children.erase(((Internal_Node*)del_inter_pos->parent)->children.begin() + child_inter_num);
 						del_inter_pos->parent->keys_num--;
 
-						delete del_inter_pos; // ÊÍ·ÅÄÚ´æ
+						delete del_inter_pos; // é‡Šæ”¾å†…å­˜
 						del_inter_pos = right_inter_node;
 					}
 				}
@@ -610,47 +436,7 @@ void BPlusTree::remove_data(long long key) {
 	}
 }
 
-//
-//void BPlusTree::delete_data(int key) {
-//	Leaf_Node* delete_pos = find_node_ptr(key);
-//	bool is_exist = false;
-//	for (auto it = delete_pos->keys.begin(); it != delete_pos->keys.end(); it++) {
-//		if (*it == key) {
-//			is_exist = true;
-//		}
-//	}
-//	if (!is_exist) {
-//		cout << "Ã»ÕÒµ½" << endl;
-//		return;
-//	}
-//	delete_directly(delete_pos, key);
-//	// ÕâÀïÉ¾ÁËºó   ÓĞ¿ÉÄÜ£¬ÒÑ¾­ÊÇ¿Õ½Úµã£¬
-//
-//	if (delete_pos->keys_num >= min_order - 1) {
-//		return;
-//	}
-//	// ÏÈ´¦ÀíÒ¶×Ó½Úµã
-//
-//	pair<BPT_Node*, BPT_Node*> node_brothers = find_brothers(delete_pos);
-//	Leaf_Node* left_node = (Leaf_Node*)node_brothers.first;
-//	Leaf_Node* right_node = (Leaf_Node*)node_brothers.second;
-//	if (left_node != NULL && left_node->keys_num >= this->min_order) {
-//		borrow_from_left(delete_pos, delete_pos->pre);
-//	}
-//	else if (right_node != NULL && right_node->keys_num >= this->min_order) {
-//		borrow_from_right(delete_pos, delete_pos->next);
-//	}
-//	else {
-//		if (left_node != NULL && left_node->keys_num < this->min_order) {
-//			merge_with_left(delete_pos, left_node);
-//		}
-//		else if (right_node != NULL && right_node->keys_num < this->min_order) {
-//			merge_with_right(delete_pos, right_node);
-//		}
-//	}
-//}
-
-void BPlusTree::print_tree() {
+void BPlusTree::print_tree() { // æ‰“å°æ•´ä¸ªB+æ ‘
 	int level = 1;
 	BPT_Node* p = this->bpt_root;
 	queue<BPT_Node*> que;
@@ -695,7 +481,7 @@ void BPlusTree::print_tree() {
 	}
 }
 
-void BPlusTree::print_leaves() {
+void BPlusTree::print_leaves() { // æ‰“å°æ‰€æœ‰å¶å­èŠ‚ç‚¹
 	Leaf_Node* p = this->leaves_head;
 	while (p != NULL) {
 		for (int i = 0; i < p->keys_num; i++) {
@@ -710,20 +496,21 @@ void BPlusTree::print_leaves() {
 
 void BPlusTree::save_bpt(string filename) {
 	/*
-		½«B+Ê÷³Ö¾Ã»¯
-		´æ´¢¸ñÊ½£ºB+Ê÷µÄ×î´óorderÊı£¬B+ÊıµÄ×îĞ¡orderÊı
-		´Ó¸ù½ÚµãÆğ£¬´Ó×óÏòÓÒÖğ²ã±£´æÃ¿¸ö½Úµã¡£
-		Ã¿¸ö½ÚµãµÄ±£´æ¸ñÊ½Îª£ºÊÇ·ñÎªÒ¶×Ó½Úµã¡¢½ÚµãÄÚ¹Ø¼üÂëµÄ¸öÊı¡¢£¨ÈôÎªÒ¶×Ó½Úµã£º¹Ø¼üÂë¶ÔÓ¦µÄvalue£©¡¢Ê¹ÓÃ'\n'µ±×÷½áÊø·û£¬Ã¿ÏîÖ®¼äÍ¨¹ı¿Õ¸ñ·Ö¸ô¡£
+		å°†B+æ ‘æŒä¹…åŒ–
+		å­˜å‚¨æ ¼å¼ï¼šB+æ ‘çš„æœ€å¤§orderæ•°ï¼ŒB+æ•°çš„æœ€å°orderæ•°
+		ä»æ ¹èŠ‚ç‚¹èµ·ï¼Œä»å·¦å‘å³é€å±‚ä¿å­˜æ¯ä¸ªèŠ‚ç‚¹ã€‚
+		æ¯ä¸ªèŠ‚ç‚¹çš„ä¿å­˜æ ¼å¼ä¸ºï¼šæ˜¯å¦ä¸ºå¶å­èŠ‚ç‚¹ã€èŠ‚ç‚¹å†…å…³é”®ç çš„ä¸ªæ•°ã€ï¼ˆè‹¥ä¸ºå¶å­èŠ‚ç‚¹ï¼šå…³é”®ç å¯¹åº”çš„valueï¼‰ã€ä½¿ç”¨'\n'å½“ä½œç»“æŸç¬¦ï¼Œæ¯é¡¹ä¹‹é—´é€šè¿‡ç©ºæ ¼åˆ†éš”ã€‚
 	*/
 	if (this->bpt_root == NULL) {
-		cout << "error tree is empty" << endl;
+		cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " B+æ ‘åºåˆ—åŒ– å‡ºç°é”™è¯¯ï¼ˆB+æ ‘ä¸ºç©ºï¼‰" << endl;
+
 		return;
 	}
 
 	ofstream outfile;
 	outfile.open(filename, ios::out | ios::trunc);
 	if (!outfile.is_open()) {
-		cout << "error" << endl;
+		cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " B+æ ‘åºåˆ—åŒ– å‡ºç°é”™è¯¯ï¼ˆæ–‡ä»¶æ‰“å¼€å¤±è´¥ï¼‰" << endl;
 		return;
 	}
 	BPT_Node* node_ptr = this->bpt_root;
@@ -736,14 +523,14 @@ void BPlusTree::save_bpt(string filename) {
 
 		node_ptr = node_que.front();
 		node_que.pop();
-		if (node_ptr->is_leaf) {
+		if (node_ptr->is_leaf) { // ä»å·¦åˆ°æœ‰éå†å¶å­èŠ‚ç‚¹ï¼Œä¿å­˜å…¶keyå’Œvalue
 			outfile << 1 << ' ' << node_ptr->keys_num << ' ';
 			for (int i = 0; i < node_ptr->keys_num; i++) {
 				outfile << node_ptr->keys[i] << ' ' << ((Leaf_Node*)node_ptr)->values[i] << ' ';
 			}
 			outfile << endl;
 		}
-		else {
+		else { // ä»å·¦åˆ°å³éå†è¯¥å±‚çš„å†…éƒ¨èŠ‚ç‚¹ï¼Œä¿å­˜å…¶keyå€¼ï¼Œå¹¶å°†å…¶childrenåŠ å…¥åˆ°é˜Ÿåˆ—ä¸­
 			outfile << 0 << ' ' << node_ptr->keys_num << ' ';
 			for (auto it = node_ptr->keys.begin(); it != node_ptr->keys.end(); it++) {
 				outfile << *it << ' ';
@@ -758,15 +545,13 @@ void BPlusTree::save_bpt(string filename) {
 
 void BPlusTree::read_bpt(string filename) {
 	if (this->bpt_root != NULL) {
-		cout << "error, please destory current tree, then try again" << endl;
-		// Ö»ÓĞ¿ÕÊ±²ÅÄÜ½¨Á¢ĞÂµÄÊ÷
-		return;
+		destory_bpt(); // ä¸ä¸ºç©ºæ—¶åˆ™é”€æ¯å½“å‰çš„B+æ ‘
 	}
 	
 	ifstream inputfile;
 	inputfile.open(filename, ios::in);
 	if (!inputfile.is_open()) {
-		cout << "open file error" << endl;
+		cout <<"çº¿ç¨‹ï¼š"<< std::this_thread::get_id()<< " B+æ ‘ååºåˆ—åŒ– å‡ºç°é”™è¯¯ï¼ˆæ–‡ä»¶æ‰“å¼€å¤±è´¥ï¼‰" << endl;
 		return;
 	}
 
@@ -775,12 +560,12 @@ void BPlusTree::read_bpt(string filename) {
 	istringstream node_message(line);
 
 	node_message >> this->bpt_order >> this->min_order;
-	// ÎÄ¼şÊ×ĞĞ±£´æµÄÊÇb+Ê÷µÄorders
+	// æ–‡ä»¶é¦–è¡Œä¿å­˜çš„æ˜¯b+æ ‘çš„orders
 	cout << this->bpt_order << " " << this->min_order << endl;
 
-	queue<BPT_Node* > node_queue; //±£´æÉÏ²ã½ÚµãĞÅÏ¢£¬ÓÃÀ´½¨Á¢×Ó½ÚµãºÍ¸¸½ÚµãµÄÁªÏµ
-	Leaf_Node* pre_leaf = NULL; //±£´æµ±Ç°Ò¶×Ó½ÚµãµÄÇ°Ò»¸öÒ¶×Ó½ÚµãĞÅÏ¢£¬ÓÃÀ´½¨Á¢Ò¶×Ó½ÚµãÖ®¼äµÄË«ÏòÁ´±í
-	while (getline(inputfile, line)) { //±£´æb+Ê÷Ê±£¬½ÚµãÊı¾İ°´ĞĞÔÚÎÄ¼şÖĞ±£´æ£¬Òò´Ë¶ÁÈ¡Ê±°´ĞĞ½øĞĞ¶ÁÈ¡
+	queue<BPT_Node* > node_queue; //ä¿å­˜ä¸Šå±‚èŠ‚ç‚¹ä¿¡æ¯ï¼Œç”¨æ¥å»ºç«‹å­èŠ‚ç‚¹å’Œçˆ¶èŠ‚ç‚¹çš„è”ç³»
+	Leaf_Node* pre_leaf = NULL; //ä¿å­˜å½“å‰å¶å­èŠ‚ç‚¹çš„å‰ä¸€ä¸ªå¶å­èŠ‚ç‚¹ä¿¡æ¯ï¼Œç”¨æ¥å»ºç«‹å¶å­èŠ‚ç‚¹ä¹‹é—´çš„åŒå‘é“¾è¡¨
+	while (getline(inputfile, line)) { //ä¿å­˜b+æ ‘æ—¶ï¼ŒèŠ‚ç‚¹æ•°æ®æŒ‰è¡Œåœ¨æ–‡ä»¶ä¸­ä¿å­˜ï¼Œå› æ­¤è¯»å–æ—¶æŒ‰è¡Œè¿›è¡Œè¯»å–
 		bool is_leaf;
 		int keys_num;
 
@@ -788,7 +573,7 @@ void BPlusTree::read_bpt(string filename) {
 		node_message.str(line);
 		node_message >> is_leaf >> keys_num;
 
-		if (is_leaf) { // ¶ÁÈ¡µ½µÄÊÇÒ¶×Ó½Úµã
+		if (is_leaf) { // è¯»å–åˆ°çš„æ˜¯å¶å­èŠ‚ç‚¹
 			Leaf_Node* new_leaf_node = new Leaf_Node();
 			new_leaf_node->is_leaf = true;
 			new_leaf_node->keys_num = keys_num;
@@ -797,65 +582,87 @@ void BPlusTree::read_bpt(string filename) {
 				node_message >> key >> value;
 				new_leaf_node->keys.push_back(key);
 				new_leaf_node->values.push_back(value);
-				//½«ÎÄ¼şÖĞÒ¶×Ó½ÚµãµÄ¹Ø¼üÂëºÍ¼üÖµ¶ÁÈ¡µ½Leaf_NodeÖĞ
+				//å°†æ–‡ä»¶ä¸­å¶å­èŠ‚ç‚¹çš„å…³é”®ç å’Œé”®å€¼è¯»å–åˆ°Leaf_Nodeä¸­
 			}
-			Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // Ñ°ÕÒÆä¸¸½Úµã
+			Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // å¯»æ‰¾å…¶çˆ¶èŠ‚ç‚¹
 			if (parent_node->keys_num + 1 == parent_node->children.size()) {
-				node_queue.pop(); // ¶ÓÊ×½ÚµãµÄchildernÒÑÂú£¬ËùÒÔ¶ÓÊ×ÏÂÒ»¸ö½Úµã²ÅÊÇ¸Ã½ÚµãµÄ¸¸½Úµã
+				node_queue.pop(); // é˜Ÿé¦–èŠ‚ç‚¹çš„childernå·²æ»¡ï¼Œæ‰€ä»¥é˜Ÿé¦–ä¸‹ä¸€ä¸ªèŠ‚ç‚¹æ‰æ˜¯è¯¥èŠ‚ç‚¹çš„çˆ¶èŠ‚ç‚¹
 				parent_node = (Internal_Node*)node_queue.front();
 			}
 			new_leaf_node->parent = parent_node;
 			parent_node->children.push_back(new_leaf_node);
-			// Ò¶×Ó½Úµã²»ĞèÒªÌí¼Óµ½node_queueÖĞ£¬ÒòÎªÆäÃ»ÓĞ¶ù×Ó½Úµã
+			// å¶å­èŠ‚ç‚¹ä¸éœ€è¦æ·»åŠ åˆ°node_queueä¸­ï¼Œå› ä¸ºå…¶æ²¡æœ‰å„¿å­èŠ‚ç‚¹
 
-			if (pre_leaf == NULL) { // ¸Ã½ÚµãÊÇµÚÒ»¸öÒ¶×Ó½Úµã£¬´¦ÓÚ¶ÓÊ×
+			if (pre_leaf == NULL) { // è¯¥èŠ‚ç‚¹æ˜¯ç¬¬ä¸€ä¸ªå¶å­èŠ‚ç‚¹ï¼Œå¤„äºé˜Ÿé¦–
 				this->leaves_head = new_leaf_node;
 				new_leaf_node->pre = NULL;
 				new_leaf_node->next = NULL;
-				pre_leaf = new_leaf_node; // pre_leafÖ¸Ïòµ±Ç°Ò¶×Ó½ÚµãµÄÇ°Ò»¸öÒ¶×Ó½Úµã
+				pre_leaf = new_leaf_node; // pre_leafæŒ‡å‘å½“å‰å¶å­èŠ‚ç‚¹çš„å‰ä¸€ä¸ªå¶å­èŠ‚ç‚¹
 			}
 			else {
 				new_leaf_node->next = NULL;
 				new_leaf_node->pre = pre_leaf;
-				pre_leaf->next = new_leaf_node; // ½¨Á¢Ë«ÏòÁ´±í
-				pre_leaf = new_leaf_node; // pre_leafÖ¸Ïòµ±Ç°Ò¶×Ó½ÚµãµÄÇ°Ò»¸öÒ¶×Ó½Úµã
+				pre_leaf->next = new_leaf_node; // å»ºç«‹åŒå‘é“¾è¡¨
+				pre_leaf = new_leaf_node; // pre_leafæŒ‡å‘å½“å‰å¶å­èŠ‚ç‚¹çš„å‰ä¸€ä¸ªå¶å­èŠ‚ç‚¹
 			}
 		}
-		else { // ¶ÁÈ¡µ½µÄÊÇÄÚ²¿½Úµã
+		else { // è¯»å–åˆ°çš„æ˜¯å†…éƒ¨èŠ‚ç‚¹
 			Internal_Node* new_inter_node = new Internal_Node();
 			new_inter_node->is_leaf = false;
 			new_inter_node->keys_num = keys_num;
-			for (int i = 0; i < keys_num; i++) { //´ÓÎÄ¼şÖĞ¶ÁÈ¡ÄÚ²¿½ÚµãµÄ¹Ø¼üÂë£¬²åÈëµ½Internal_NodeÖĞ
+			for (int i = 0; i < keys_num; i++) { //ä»æ–‡ä»¶ä¸­è¯»å–å†…éƒ¨èŠ‚ç‚¹çš„å…³é”®ç ï¼Œæ’å…¥åˆ°Internal_Nodeä¸­
 				int key;
 				node_message >> key;
 				new_inter_node->keys.push_back(key);
 			}
 
 			if (node_queue.empty()) {
-				this->bpt_root = new_inter_node; // ¶ÓÁĞÎª¿Õ£¬ËµÃ÷¸Ã½ÚµãÊÇ¸ù½Úµã
+				this->bpt_root = new_inter_node; // é˜Ÿåˆ—ä¸ºç©ºï¼Œè¯´æ˜è¯¥èŠ‚ç‚¹æ˜¯æ ¹èŠ‚ç‚¹
 				new_inter_node->parent = NULL;
 				node_queue.push(new_inter_node);
 			}
 			else {
-				Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // ¶ÓÁĞ²»Îª¿Õ£¬Ôò´¦ÓÚ¶ÓÊ×µÄ½ÚµãÊÇ¸Ã½ÚµãµÄ¸¸½Úµã
+				Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // é˜Ÿåˆ—ä¸ä¸ºç©ºï¼Œåˆ™å¤„äºé˜Ÿé¦–çš„èŠ‚ç‚¹æ˜¯è¯¥èŠ‚ç‚¹çš„çˆ¶èŠ‚ç‚¹
 				if (parent_node->keys_num + 1 == parent_node->children.size()) {
-					node_queue.pop(); // ¶ÓÊ×½ÚµãµÄchildernÒÑÂú£¬ËùÒÔ¶ÓÊ×ÏÂÒ»¸ö½Úµã²ÅÊÇ¸Ã½ÚµãµÄ¸¸½Úµã
+					node_queue.pop(); // é˜Ÿé¦–èŠ‚ç‚¹çš„childernå·²æ»¡ï¼Œæ‰€ä»¥é˜Ÿé¦–ä¸‹ä¸€ä¸ªèŠ‚ç‚¹æ‰æ˜¯è¯¥èŠ‚ç‚¹çš„çˆ¶èŠ‚ç‚¹
 					parent_node = (Internal_Node*)node_queue.front();
 				}
 				new_inter_node->parent = parent_node;
-				parent_node->children.push_back(new_inter_node); // ½«¸Ã½Úµã²åÈëµ½¸¸½ÚµãµÄchildrenÖĞ
-				node_queue.push(new_inter_node); // ½«¸Ã½Úµã²åÈëµ½¶ÓÁĞÖĞ£¬µÈ´ıÓëÖ®ºóµÄ½Úµã½¨Á¢¸¸×ÓÁªÏµ
+				parent_node->children.push_back(new_inter_node); // å°†è¯¥èŠ‚ç‚¹æ’å…¥åˆ°çˆ¶èŠ‚ç‚¹çš„childrenä¸­
+				node_queue.push(new_inter_node); // å°†è¯¥èŠ‚ç‚¹æ’å…¥åˆ°é˜Ÿåˆ—ä¸­ï¼Œç­‰å¾…ä¸ä¹‹åçš„èŠ‚ç‚¹å»ºç«‹çˆ¶å­è”ç³»
 			}
 		}
 	}
 }
 
 void BPlusTree::destory_bpt() {
+	queue<BPT_Node* > nodelist;
+	if(this->bpt_root == NULL){
+		this->leaves_head = NULL;
+		this->min_order = 0;
+		this->bpt_order = 0;
+		return;
+	}
+	nodelist.push(bpt_root);
+	while(!nodelist.empty()){ // å½“é˜Ÿåˆ—ä¸ºç©ºæ—¶è¯´æ˜æ‰€æœ‰èŠ‚ç‚¹éƒ½å·²ç»deleteå®Œæ¯•
+		BPT_Node *front_node = nodelist.front();
+		nodelist.pop();
+		if(!front_node->is_leaf){
+			for(auto it = ((Internal_Node*)front_node)->children.begin(); it != ((Internal_Node*)front_node)->children.end(); it++){
+				nodelist.push(*it); // å°†å†…éƒ¨èŠ‚ç‚¹çš„childrenèŠ‚ç‚¹åŠ å…¥åˆ°èŠ‚ç‚¹é˜Ÿåˆ—ä¸­ï¼Œç­‰å¾…åˆ é™¤
+			}
+		}
+		delete front_node;
+	}
+	this->bpt_root = NULL;
+	this->leaves_head = NULL;
+	this->min_order = 0;
+	this->bpt_order = 0;
 	return;
 }
 
 
 
 BPlusTree::~BPlusTree() {
-	delete this->bpt_root;
+	destory_bpt();
 }

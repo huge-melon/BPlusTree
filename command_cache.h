@@ -28,15 +28,15 @@ public:
 private:
 
 	BPlusTree* bpt_tree;
-	int buffer_size; // ×ÊÔ´ĞÅºÅÁ¿
-	//MyCommand* buffer; // ¿ÉÒÔÊ¹ÓÃqueue
+	int buffer_size; // èµ„æºä¿¡å·é‡
+	//MyCommand* buffer; // å¯ä»¥ä½¿ç”¨queue
 	queue<MyCommand> TaskBuffer;
 
-	std::mutex produced_mtx; // Éú²úÕßÖ®¼ä»¥³â
-	std::mutex consumed_mtx; // Ïû·ÑÕßÖ®¼ä»¥³â
-	std::mutex pv_mtx; // Éú²úÕßÏû·ÑÕßÖ®¼ä»¥³â
-	std::condition_variable buffer_not_full; // »º´æÇøÊÇ·ñÂú
-	std::condition_variable buffer_not_empty; // »º´æÇøÊÇ·ñ¿Õ
+	std::mutex produced_mtx; // ç”Ÿäº§è€…ä¹‹é—´äº’æ–¥
+	std::mutex consumed_mtx; // æ¶ˆè´¹è€…ä¹‹é—´äº’æ–¥
+	std::mutex pv_mtx; // ç”Ÿäº§è€…æ¶ˆè´¹è€…ä¹‹é—´äº’æ–¥
+	std::condition_variable buffer_not_full; // ç¼“å­˜åŒºæ˜¯å¦æ»¡
+	std::condition_variable buffer_not_empty; // ç¼“å­˜åŒºæ˜¯å¦ç©º
 };
 
 
