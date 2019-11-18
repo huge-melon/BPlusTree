@@ -12,7 +12,7 @@ class BPT_Node
 //	int keys_num;
 //	bool is_leaf;
 public:
-	vector<int> keys;
+	vector<long long> keys;
 	BPT_Node* parent;
 
 	//int get_keysnum() {
@@ -36,7 +36,7 @@ class Leaf_Node : public BPT_Node
 public:
 	Leaf_Node* next;
 	Leaf_Node* pre;
-	vector<int> values;
+	vector<long long> values;
 	Leaf_Node() {
 		keys_num = 0;
 		is_leaf = true;
