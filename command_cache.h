@@ -11,7 +11,7 @@
 
 struct MyCommand
 {
-	string operation;
+	std::string operation;
 	long long key;
 	long long value;
 };
@@ -29,8 +29,7 @@ private:
 
 	BPlusTree* bpt_tree;
 	int buffer_size; // 资源信号量
-	//MyCommand* buffer; // 可以使用queue
-	queue<MyCommand> TaskBuffer;
+	std::queue<MyCommand> TaskBuffer; // 缓存区
 
 	std::mutex produced_mtx; // 生产者之间互斥
 	std::mutex consumed_mtx; // 消费者之间互斥

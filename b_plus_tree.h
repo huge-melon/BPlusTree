@@ -1,8 +1,46 @@
 #ifndef b_plus_tree_h
 #define b_plus_tree_h
 
-#include "bpt_node.h"
+#include <iostream>
+#include <vector>
 #include <string>
+
+class BPT_Node
+{
+
+public:
+	std::vector<long long> keys;
+	BPT_Node* parent;
+	int keys_num;
+	bool is_leaf;
+};
+// 叶子节点
+class Leaf_Node : public BPT_Node
+{
+public:
+	Leaf_Node* next;
+	Leaf_Node* pre;
+	std::vector<long long> values;
+	Leaf_Node() {
+		keys_num = 0;
+		is_leaf = true;
+		next = NULL;
+		pre = NULL;
+		parent = NULL;
+	}
+};
+// 内部节点
+class Internal_Node : public BPT_Node
+{
+public:
+	std::vector<BPT_Node*> children;
+	Internal_Node() {
+		keys_num = 0;
+		is_leaf = false;
+		parent = NULL;
+	}
+};
+
 
 class BPlusTree
 {
@@ -15,8 +53,8 @@ public:
 	int search_data(long long key); // 查到key所对应的value
 	void remove_data(long long key); // 删除key所对应的数据
 
-	void save_bpt(string filename); // 将B+树保存到磁盘中
-	void read_bpt(string filename); // 从磁盘中恢复B+树
+	void save_bpt(std::string filename); // 将B+树保存到磁盘中
+	void read_bpt(std::string filename); // 从磁盘中恢复B+树
 	void destory_bpt(); // 销毁B+树
 
 	void print_leaves(); // 打印叶子节点
@@ -35,7 +73,5 @@ private:
 	int find_child_num(BPT_Node* raw_node);
 
 };
-
-
 
 #endif

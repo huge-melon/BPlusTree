@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <thread>
+using namespace std;
 
 BPlusTree::BPlusTree(void) {
 	this->bpt_order = 0;
