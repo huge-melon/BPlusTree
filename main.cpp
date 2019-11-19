@@ -77,37 +77,37 @@
 
 // 定时启动一个线程打印所有的数据信息？
 
-#include <iostream>
-#include <thread>
-// #include <unistd.h>
-#include "command_cache.h"
-int main()
-{
-	ComBuffer cb(100, 5);
+// #include <iostream>
+// #include <thread>
+// // #include <unistd.h>
+// // #include "command_cache.h"
+// int main()
+// {
+// 	ComBuffer cb(100, 5);
 
-	std::thread producer1(&ComBuffer::ProducerTask, std::ref(cb));
-	std::thread producer2(&ComBuffer::ProducerTask, std::ref(cb));
-	std::thread producer3(&ComBuffer::ProducerTask, std::ref(cb));
-	std::thread producer4(&ComBuffer::ProducerTask, std::ref(cb));
-	std::thread producer5(&ComBuffer::ProducerTask, std::ref(cb));
-	std::thread producer6(&ComBuffer::ProducerTask, std::ref(cb));
+// 	std::thread producer1(&ComBuffer::ProducerTask, std::ref(cb));
+// 	std::thread producer2(&ComBuffer::ProducerTask, std::ref(cb));
+// 	std::thread producer3(&ComBuffer::ProducerTask, std::ref(cb));
+// 	std::thread producer4(&ComBuffer::ProducerTask, std::ref(cb));
+// 	std::thread producer5(&ComBuffer::ProducerTask, std::ref(cb));
+// 	std::thread producer6(&ComBuffer::ProducerTask, std::ref(cb));
 
-	std::thread consumer1(&ComBuffer::ConsumerTask, std::ref(cb));
-	std::thread consumer2(&ComBuffer::ConsumerTask, std::ref(cb));
-	std::thread consumer3(&ComBuffer::ConsumerTask, std::ref(cb));
-	std::thread consumer4(&ComBuffer::ConsumerTask, std::ref(cb));
+// 	std::thread consumer1(&ComBuffer::ConsumerTask, std::ref(cb));
+// 	std::thread consumer2(&ComBuffer::ConsumerTask, std::ref(cb));
+// 	std::thread consumer3(&ComBuffer::ConsumerTask, std::ref(cb));
+// 	std::thread consumer4(&ComBuffer::ConsumerTask, std::ref(cb));
 
-	producer1.join();
-	producer2.join();
-	producer3.join();
-	producer4.join();
-	producer5.join();
-	producer6.join();
+// 	producer1.join();
+// 	producer2.join();
+// 	producer3.join();
+// 	producer4.join();
+// 	producer5.join();
+// 	producer6.join();
 
-	consumer1.join();
-	consumer2.join();
-	consumer3.join();
-	consumer4.join();
+// 	consumer1.join();
+// 	consumer2.join();
+// 	consumer3.join();
+// 	consumer4.join();
 
 
-}
+// }

@@ -105,7 +105,7 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 		middle_key = split_pos->keys[left_num - 1];
 		new_node = new Internal_Node();
 		if (new_node == NULL) {
-			// cout <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
 			return;
 		}
 		Internal_Node* new_internal = (Internal_Node*)new_node;
@@ -132,7 +132,7 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 	if (parent_node == NULL) {
 		parent_node = new Internal_Node();
 		if (parent_node == NULL) {
-			// cout <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
 			return;
 		}
 		parent_node->is_leaf = false;
@@ -165,7 +165,7 @@ void BPlusTree::insert_data(int key, int value) {
 
 		this->leaves_head = (Leaf_Node*)bpt_root;
 		if (this->bpt_root == NULL) {
-			// cout <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
 			return;
 		}
 
@@ -268,7 +268,7 @@ void BPlusTree::remove_data(int key) {
 		}
 	}
 	if (!is_exist) {
-		// cout <<"线程："<< std::this_thread::get_id()<< " delete操作错误 （key: "<<key<<" 未找到）" << endl;
+		// cout <<"线程："<< std::this_thread::get_id()<< " delete操作错误 （key: "<<key<<" 不存在）" << endl;
 		return;
 	}
 
@@ -515,7 +515,7 @@ void BPlusTree::save_bpt(string filename) {
 		每个节点的保存格式为：是否为叶子节点、节点内关键码的个数、（若为叶子节点：关键码对应的value）、使用'\n'当作结束符，每项之间通过空格分隔。
 	*/
 	if (this->bpt_root == NULL) {
-		cout << "线程：" << std::this_thread::get_id() << " B+树序列化 出现错误（B+树为空）" << endl;
+		cerr << "线程：" << std::this_thread::get_id() << " B+树序列化 出现错误（B+树为空）" << endl;
 
 		return;
 	}
@@ -523,7 +523,7 @@ void BPlusTree::save_bpt(string filename) {
 	ofstream outfile;
 	outfile.open(filename, ios::out | ios::trunc);
 	if (!outfile.is_open()) {
-		cout << "线程：" << std::this_thread::get_id() << " B+树序列化 出现错误（文件打开失败）" << endl;
+		cerr << "线程：" << std::this_thread::get_id() << " B+树序列化 出现错误（文件打开失败）" << endl;
 		return;
 	}
 	BPT_Node* node_ptr = this->bpt_root;
@@ -564,7 +564,7 @@ void BPlusTree::read_bpt(string filename) {
 	ifstream inputfile;
 	inputfile.open(filename, ios::in);
 	if (!inputfile.is_open()) {
-		cout << "线程：" << std::this_thread::get_id() << " B+树反序列化 出现错误（文件打开失败）" << endl;
+		cerr << "线程：" << std::this_thread::get_id() << " B+树反序列化 出现错误（文件打开失败）" << endl;
 		return;
 	}
 
@@ -680,10 +680,10 @@ void BPlusTree::add_command(MyCommand com) {
 	unique_lock<mutex> pvlock(this->pv_mtx); // 获得互斥锁
 	while ((this->TaskBuffer).size() == this->buffer_size) {
 		// 命令缓存区已满
-		cout << "生产者线程：" << std::this_thread::get_id() << ' ' << com.operation << " 操作，被阻塞（缓存区已满）" << endl;
+		// cout << "生产者线程：" << std::this_thread::get_id() << ' ' << com.operation << " 操作，被阻塞（缓存区已满）" << endl;
 		(this->buffer_not_full).wait(pvlock);
 	}
-	cout << "生产者线程：" << com.operation << ": " << com.key << endl;
+	// cout << "生产者线程：" << com.operation << ": " << com.key << endl;
 	TaskBuffer.push(com);
 	(this->buffer_not_empty).notify_all();
 	// 缓存区不为空，唤醒被阻塞的消费者线程
@@ -694,12 +694,12 @@ void BPlusTree::add_command(MyCommand com) {
 void BPlusTree::take_command() {
 	unique_lock<mutex> pvlock(this->pv_mtx); // 获得互斥锁
 	while ((this->TaskBuffer).size() == 0) {
-		cout << "消费者线程：" << std::this_thread::get_id() << " 被阻塞（缓存区为空）" << endl;
+		// cout << "消费者线程：" << std::this_thread::get_id() << " 被阻塞（缓存区为空）" << endl;
 		(this->buffer_not_empty).wait(pvlock);
 	}
 
 	MyCommand com = (this->TaskBuffer).front();
-	cout << "消费者线程：" << com.operation << ": " << com.key << endl;
+	// cout << "消费者线程：" << com.operation << ": " << com.key << endl;
 	(this->TaskBuffer).pop();
 
 	if (com.operation == "insert") {
@@ -716,7 +716,7 @@ void BPlusTree::take_command() {
 
 	}
 	else {
-		cout << "消费者线程：" << std::this_thread::get_id() << " 读取到非法命令" << endl;
+		cerr << "消费者线程：" << std::this_thread::get_id() << " 读取到非法命令:"<< com.operation << endl;
 	}
 
 	(this->buffer_not_full).notify_all();
