@@ -77,7 +77,18 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 	if (split_pos->is_leaf == true) {
 
 		middle_key = split_pos->keys[left_num];
-		new_node = new Leaf_Node();
+		try{
+			new_node = new Leaf_Node();		
+		}
+		catch(bad_alloc &memExp){
+			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作分裂节点错误（内存分配失败）" <<memExp.what()<<endl;
+			return;
+		}
+
+		// if (new_node == NULL) {
+		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作分裂节点错误（内存分配失败）" << endl;
+		// 	return;
+		// }
 		Leaf_Node* new_leaf = (Leaf_Node*)new_node;
 		Leaf_Node* leaf_split_pos = (Leaf_Node*)split_pos;
 		// 分裂后只有一个节点的情况
@@ -103,11 +114,17 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 	}
 	else {
 		middle_key = split_pos->keys[left_num - 1];
-		new_node = new Internal_Node();
-		if (new_node == NULL) {
-			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+		try{
+			new_node = new Internal_Node();
+		}
+		catch(bad_alloc &memExp){
+			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作分裂节点错误（内存分配失败）" <<memExp.what()<<endl;
 			return;
 		}
+		// if (new_node == NULL) {
+		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+		// 	return;
+		// }
 		Internal_Node* new_internal = (Internal_Node*)new_node;
 		Internal_Node* internal_split_pos = (Internal_Node*)split_pos;
 
@@ -128,13 +145,18 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 	// middle_key 是应该插入到parent_node的关键码        new_node是新的节点
 
 	BPT_Node* parent_node = split_pos->parent;
-
 	if (parent_node == NULL) {
-		parent_node = new Internal_Node();
-		if (parent_node == NULL) {
-			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+		try{
+			parent_node = new Internal_Node();
+		}
+		catch(bad_alloc &memExp){
+			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" <<memExp.what()<<endl;
 			return;
 		}
+		// if (parent_node == NULL) {
+		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+		// 	return;
+		// }
 		parent_node->is_leaf = false;
 		parent_node->keys_num++;
 		parent_node->keys.push_back(middle_key);
@@ -161,13 +183,19 @@ void BPlusTree::insert_data(int key, int value) {
 	Leaf_Node* insert_pos = find_node_ptr(key);
 
 	if (insert_pos == NULL) {
-		this->bpt_root = new Leaf_Node();
-
-		this->leaves_head = (Leaf_Node*)bpt_root;
-		if (this->bpt_root == NULL) {
-			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+		try{
+			this->bpt_root = new Leaf_Node();
+		}
+		catch(bad_alloc &memExp){
+			cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" <<memExp.what()<<endl;
 			return;
 		}
+		// if (this->bpt_root == NULL) {
+		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
+		// 	return;
+		// }
+		this->leaves_head = (Leaf_Node*)bpt_root;
+
 
 		insert_directly(bpt_root, key, &value);
 		return;
@@ -587,7 +615,18 @@ void BPlusTree::read_bpt(string filename) {
 		node_message >> is_leaf >> keys_num;
 
 		if (is_leaf) { // 读取到的是叶子节点
-			Leaf_Node* new_leaf_node = new Leaf_Node();
+			Leaf_Node* new_leaf_node;
+			try{
+				new_leaf_node = new Leaf_Node();
+			}
+			catch(bad_alloc &memExp){
+				cerr <<"线程："<< std::this_thread::get_id()<< " read_bpt操作错误（内存分配失败）" <<memExp.what()<<endl;
+				return;
+			}
+			// if (new_leaf_node == NULL) {
+			// 	cerr <<"线程："<< std::this_thread::get_id()<< " read_bpt操作错误（内存分配失败）" << endl;
+			// 	return;
+			// }			
 			new_leaf_node->is_leaf = true;
 			new_leaf_node->keys_num = keys_num;
 			for (int i = 0; i < keys_num; i++) {
@@ -620,7 +659,20 @@ void BPlusTree::read_bpt(string filename) {
 			}
 		}
 		else { // 读取到的是内部节点
-			Internal_Node* new_inter_node = new Internal_Node();
+			Internal_Node* new_inter_node;
+			try{
+				new_inter_node = new Internal_Node();
+
+			}
+			catch(bad_alloc &memExp){
+				cerr <<"线程："<< std::this_thread::get_id()<< " read_bpt操作错误（内存分配失败）" <<memExp.what()<<endl;
+				return;
+			}
+
+			// if (new_inter_node == NULL) {
+			// 	cerr <<"线程："<< std::this_thread::get_id()<< " read_bpt操作错误（内存分配失败）" << endl;
+			// 	return;
+			// }	
 			new_inter_node->is_leaf = false;
 			new_inter_node->keys_num = keys_num;
 			for (int i = 0; i < keys_num; i++) { //从文件中读取内部节点的关键码，插入到Internal_Node中
