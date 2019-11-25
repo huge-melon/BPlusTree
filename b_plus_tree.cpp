@@ -47,36 +47,31 @@ void BPlusTree::insert_directly(BPT_Node* insert_pos, int key, void* value) {
 			return;
 		}
 		else if (insert_pos->keys[i] == key) {
-			// cout <<"线程："<< std::this_thread::get_id()<< " 插入key: "<<key<<" value:"<<value<<" 出现错误（关键码重复）" << endl;
+			// cerr <<"线程："<< std::this_thread::get_id()<< " 插入key: "<<key<<" value:"<<value<<" 出现错误（关键码重复）" << endl;
 			return;
 		}
 	}
-
 	insert_pos->keys.push_back(key);
 	if (insert_pos->is_leaf)
 		((Leaf_Node*)insert_pos)->values.push_back(*(int*)value);
 	else
 		((Internal_Node*)insert_pos)->children.push_back((BPT_Node*)value);
-
 	insert_pos->keys_num++;
-
 }
 
 
 
 void BPlusTree::node_split(BPT_Node* split_pos) {
-
+	// 将当前节点分裂
 	BPT_Node* new_node;
 	int all_num = split_pos->keys_num;
-	int left_num = ceil(all_num / 2.0);
-	int right_num = all_num - left_num;
-
+	int left_num = ceil(all_num / 2.0); // 从中间分裂节点，左节点中key的数量
+	int right_num = all_num - left_num; // 右节点中key的数量
 	int middle_key;
 	// assign(begin, end) 从begin  (0起始)所指的地方一直复制到end的前一个位置
 	// eraser(begin, end) 从begin  (0起始)所指的地方 删除到end的前一个位置
-	if (split_pos->is_leaf == true) {
-
-		middle_key = split_pos->keys[left_num];
+	if (split_pos->is_leaf == true) { // 分裂叶子节点
+		middle_key = split_pos->keys[left_num]; // 分裂处的key要插入到父结点中
 		try {
 			new_node = new Leaf_Node();
 		}
@@ -84,20 +79,14 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 			cerr << "线程：" << std::this_thread::get_id() << " insert操作分裂节点错误（内存分配失败）" << memExp.what() << endl;
 			return;
 		}
-
-		// if (new_node == NULL) {
-		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作分裂节点错误（内存分配失败）" << endl;
-		// 	return;
-		// }
 		Leaf_Node* new_leaf = (Leaf_Node*)new_node;
 		Leaf_Node* leaf_split_pos = (Leaf_Node*)split_pos;
-		// 分裂后只有一个节点的情况
 		new_leaf->keys_num = right_num;
 		new_leaf->is_leaf = true;
-		new_leaf->keys.assign(leaf_split_pos->keys.begin() + left_num, leaf_split_pos->keys.end());
+		new_leaf->keys.assign(leaf_split_pos->keys.begin() + left_num, leaf_split_pos->keys.end()); // 向新节点拷贝数据
 		new_leaf->values.assign(leaf_split_pos->values.begin() + left_num, leaf_split_pos->values.end());
 
-		new_leaf->next = leaf_split_pos->next;
+		new_leaf->next = leaf_split_pos->next; // 插入链表
 		new_leaf->pre = leaf_split_pos;
 		if (new_leaf->next != NULL) {
 			new_leaf->next->pre = new_leaf;
@@ -106,14 +95,12 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 		new_leaf->parent = leaf_split_pos->parent;
 
 		leaf_split_pos->keys_num = left_num;
-		leaf_split_pos->keys.erase(leaf_split_pos->keys.begin() + left_num, leaf_split_pos->keys.end());
+		leaf_split_pos->keys.erase(leaf_split_pos->keys.begin() + left_num, leaf_split_pos->keys.end()); // 原节点中删除分裂出去的数据
 		leaf_split_pos->values.erase(leaf_split_pos->values.begin() + left_num, leaf_split_pos->values.end());
-
 		leaf_split_pos->next = new_leaf;
-
 	}
-	else {
-		middle_key = split_pos->keys[left_num - 1];
+	else { // 分裂内部节点
+		middle_key = split_pos->keys[left_num - 1]; // 分裂处的key要插入到父结点中
 		try {
 			new_node = new Internal_Node();
 		}
@@ -121,31 +108,25 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 			cerr << "线程：" << std::this_thread::get_id() << " insert操作分裂节点错误（内存分配失败）" << memExp.what() << endl;
 			return;
 		}
-		// if (new_node == NULL) {
-		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
-		// 	return;
-		// }
+
 		Internal_Node* new_internal = (Internal_Node*)new_node;
 		Internal_Node* internal_split_pos = (Internal_Node*)split_pos;
-
 		new_internal->keys_num = right_num;
 		new_internal->is_leaf = false;
-		new_internal->keys.assign(internal_split_pos->keys.begin() + left_num, internal_split_pos->keys.end());
+		new_internal->keys.assign(internal_split_pos->keys.begin() + left_num, internal_split_pos->keys.end()); // 向新节点拷贝数据
 		new_internal->children.assign(internal_split_pos->children.begin() + left_num, internal_split_pos->children.end());
 		for (auto it = internal_split_pos->children.begin() + left_num; it != internal_split_pos->children.end(); it++) {
 			(*it)->parent = new_internal;
 		}
 
 		new_internal->parent = internal_split_pos->parent;
-
 		internal_split_pos->keys_num = left_num - 1;
-		internal_split_pos->keys.erase(internal_split_pos->keys.begin() + left_num - 1, internal_split_pos->keys.end());
+		internal_split_pos->keys.erase(internal_split_pos->keys.begin() + left_num - 1, internal_split_pos->keys.end()); // 原节点中删除分裂出去的数据
 		internal_split_pos->children.erase(internal_split_pos->children.begin() + left_num, internal_split_pos->children.end());
 	}
-	// middle_key 是应该插入到parent_node的关键码        new_node是新的节点
 
-	BPT_Node* parent_node = split_pos->parent;
-	if (parent_node == NULL) {
+	BPT_Node* parent_node = split_pos->parent; // 获取父节点指针
+	if (parent_node == NULL) { // 原节点是根节点，分裂后则需新建根节点
 		try {
 			parent_node = new Internal_Node();
 		}
@@ -153,35 +134,26 @@ void BPlusTree::node_split(BPT_Node* split_pos) {
 			cerr << "线程：" << std::this_thread::get_id() << " insert操作错误（内存分配失败）" << memExp.what() << endl;
 			return;
 		}
-		// if (parent_node == NULL) {
-		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
-		// 	return;
-		// }
 		parent_node->is_leaf = false;
 		parent_node->keys_num++;
-		parent_node->keys.push_back(middle_key);
-		((Internal_Node*)parent_node)->children.push_back(split_pos);
+		parent_node->keys.push_back(middle_key); // 向父结点中插入分裂后儿子节点的key
+		((Internal_Node*)parent_node)->children.push_back(split_pos); //插入儿子指针
 		((Internal_Node*)parent_node)->children.push_back(new_node);
 		split_pos->parent = parent_node;
 		new_node->parent = parent_node;
-		bpt_root = parent_node;
+		bpt_root = parent_node; // 根节点指向新节点
 
 	}
 	else {
-		insert_directly(parent_node, middle_key, new_node);
-
-		if (parent_node->keys_num > bpt_order - 1) {
-			node_split(parent_node);
+		insert_directly(parent_node, middle_key, new_node); // 向父结点中插入分裂后儿子节点的key
+		if (parent_node->keys_num > bpt_order - 1) { // 判断父节点是否已超过限制
+			node_split(parent_node); //分裂父节点
 		}
 	}
-
-
 }
 
-void BPlusTree::insert_data(int key, int value) {
-	//cout << "insert: " << key << ' ' << value << endl;
-	Leaf_Node* insert_pos = find_node_ptr(key);
-
+void BPlusTree::insert_data(int key, int value) { // 插入数据
+	Leaf_Node* insert_pos = find_node_ptr(key); // 找到数据应该插入的节点的指针
 	if (insert_pos == NULL) {
 		try {
 			this->bpt_root = new Leaf_Node();
@@ -190,32 +162,19 @@ void BPlusTree::insert_data(int key, int value) {
 			cerr << "线程：" << std::this_thread::get_id() << " insert操作错误（内存分配失败）" << memExp.what() << endl;
 			return;
 		}
-		// if (this->bpt_root == NULL) {
-		// 	cerr <<"线程："<< std::this_thread::get_id()<< " insert操作错误（内存分配失败）" << endl;
-		// 	return;
-		// }
 		this->leaves_head = (Leaf_Node*)bpt_root;
-
-
 		insert_directly(bpt_root, key, &value);
 		return;
 	}
 	insert_directly(insert_pos, key, &value);
-
 	// 先插入再检查是否，超过order的限制
 	if (insert_pos->keys_num > bpt_order - 1) {
 		node_split(insert_pos);
 	}
-	//cout << "FINISH__insert: " << key << ' ' << value << endl;
 }
 
-
-
-
 Leaf_Node* BPlusTree::find_node_ptr(int key) {
-
-	BPT_Node* node_ptr = this->bpt_root;
-
+	BPT_Node* node_ptr = this->bpt_root; // 从根节点向下查找key所应在的节点指针
 	if (this->bpt_root == NULL) {
 		return NULL;
 	}
@@ -232,12 +191,10 @@ Leaf_Node* BPlusTree::find_node_ptr(int key) {
 			node_ptr = ((Internal_Node*)node_ptr)->children[node_ptr->keys_num];
 		}
 	}
-
 	return (Leaf_Node*)node_ptr;
-
 }
 
-int* BPlusTree::find_data_ptr(int key) {
+int* BPlusTree::find_data_ptr(int key) { // 找到key所对应的数据的指针
 	Leaf_Node* bp = find_node_ptr(key);
 	if (bp == NULL)
 		return NULL;
@@ -247,18 +204,17 @@ int* BPlusTree::find_data_ptr(int key) {
 		}
 	}
 	return NULL;
-
 }
 
-int BPlusTree::search_data(int key) {
+int BPlusTree::search_data(int key) { // 找到key所对应的数据
 	int* temp = find_data_ptr(key);
 	if (temp != NULL)
 		return *temp;
+	// cerr << "未找到key= "<<key << " 的数据"<<endl;
 	return -1;
 }
 
-
-void BPlusTree::update_data(int key, int new_value) {
+void BPlusTree::update_data(int key, int new_value) { // 更新数据
 	int *value = find_data_ptr(key);
 	if (value == NULL) {
 		// cout <<"线程："<< std::this_thread::get_id()<< " update 操作错误 （key: "<<key<<" 不存在）" << endl;
@@ -268,7 +224,7 @@ void BPlusTree::update_data(int key, int new_value) {
 	return;
 }
 
-int BPlusTree::find_child_num(BPT_Node* raw_node) {
+int BPlusTree::find_child_num(BPT_Node* raw_node) { // 找到该节点是其父节点的第几个儿子节点，用来查找其兄弟节点
 	int child_num = -1;
 	Internal_Node* parent = (Internal_Node*)raw_node->parent;
 	for (int i = 0; i < parent->keys_num + 1; i++) {
@@ -279,7 +235,7 @@ int BPlusTree::find_child_num(BPT_Node* raw_node) {
 	}
 }
 
-void BPlusTree::remove_data(int key) {
+void BPlusTree::remove_data(int key) { //删除数据
 	//cout << "remove: " << key << endl;
 	Leaf_Node* delete_pos = find_node_ptr(key); // 先找到该key对应的叶子节点指针
 	if (delete_pos == NULL) {
@@ -287,7 +243,6 @@ void BPlusTree::remove_data(int key) {
 		return;
 	}
 	bool is_exist = false;
-
 	for (int i = 0; i < delete_pos->keys_num; i++) { // 在该叶子节点中搜索key是否存在
 		if (delete_pos->keys[i] == key) { // 若存在则删除
 			delete_pos->keys.erase(delete_pos->keys.begin() + i); 
@@ -298,23 +253,19 @@ void BPlusTree::remove_data(int key) {
 		}
 	}
 	if (!is_exist) { // key不存在
-		//cout <<"线程："<< std::this_thread::get_id()<< " delete操作错误 （key: "<<key<<" 不存在）" << endl;
+		// cout <<"线程："<< std::this_thread::get_id()<< " delete操作错误 （key: "<<key<<" 不存在）" << endl;
 		return;
 	}
-
 	if (delete_pos->keys_num < min_order - 1 && delete_pos->parent != NULL) { // 删除key后该节点的关键码数小于最低限制，并且该节点不是叶子节点
 		Leaf_Node* right_node = NULL;
 		Leaf_Node* left_node = NULL;
-
 		int child_num = find_child_num(delete_pos); // 该节点是其父节点的第几个儿子节点
-
 		if (child_num - 1 >= 0) { // 找其左兄弟
 			left_node = (Leaf_Node*)((Internal_Node*)delete_pos->parent)->children[child_num - 1];
 		}
 		if (child_num + 1 < delete_pos->parent->keys_num + 1) { // 找其右兄弟
 			right_node = (Leaf_Node*)((Internal_Node*)delete_pos->parent)->children[child_num + 1];
 		}
-
 		if (left_node != NULL && left_node->keys_num >= this->min_order) {
 			// 左兄弟key充足，从左兄弟节点借一个key
 			delete_pos->keys.insert(delete_pos->keys.begin(), left_node->keys.back());
@@ -327,7 +278,6 @@ void BPlusTree::remove_data(int key) {
 
 			delete_pos->parent->keys[child_num - 1] = delete_pos->keys.front(); // 更新父节点中的key
 			return;
-
 		}
 		else if (right_node != NULL && right_node->keys_num >= this->min_order) {
 			// 右兄弟key充足，从右兄弟节点借一个key
@@ -341,7 +291,6 @@ void BPlusTree::remove_data(int key) {
 
 			delete_pos->parent->keys[child_num] = right_node->keys.front(); // 更新父节点中的key
 			return;
-
 		}
 		else {
 			if (left_node != NULL && left_node->keys_num < this->min_order) {
@@ -361,8 +310,6 @@ void BPlusTree::remove_data(int key) {
 
 				delete delete_pos; // 释放内存
 				delete_pos = left_node;
-
-
 			}
 			else if (right_node != NULL && right_node->keys_num < this->min_order) {
 				// 与右兄弟进行合并, 将右兄弟节点的信息插入到当前节点的后边
@@ -393,19 +340,19 @@ void BPlusTree::remove_data(int key) {
 					return;
 				}
 				int child_inter_num = find_child_num(del_inter_pos);
-				if (child_inter_num - 1 >= 0) {
+				if (child_inter_num - 1 >= 0) { // 若存在左兄弟
 					left_inter_node = (Internal_Node*)((Internal_Node*)del_inter_pos->parent)->children[child_inter_num - 1];
 				}
 
-				if (child_inter_num + 1 < del_inter_pos->parent->keys_num + 1) {
+				if (child_inter_num + 1 < del_inter_pos->parent->keys_num + 1) { // 若存在右兄弟
 					right_inter_node = (Internal_Node*)((Internal_Node*)del_inter_pos->parent)->children[child_inter_num + 1];
 				}
 
 				if (right_inter_node != NULL && right_inter_node->keys_num >= this->min_order) {
-					// 从右兄弟借
+					// 从右兄弟借一个数据插入到当前节点中
 					del_inter_pos->keys.push_back(del_inter_pos->parent->keys[child_inter_num]);
 					del_inter_pos->children.push_back(right_inter_node->children.front());
-					del_inter_pos->parent->keys[child_inter_num] = right_inter_node->keys.front();
+					del_inter_pos->parent->keys[child_inter_num] = right_inter_node->keys.front(); // 借完后修改其父节点相应的key
 
 					del_inter_pos->keys_num++;
 
@@ -420,7 +367,7 @@ void BPlusTree::remove_data(int key) {
 					// 从左兄弟借
 					del_inter_pos->children.insert(del_inter_pos->children.begin(), left_inter_node->children.back());
 					del_inter_pos->keys.insert(del_inter_pos->keys.begin(), del_inter_pos->parent->keys[child_inter_num - 1]);
-					del_inter_pos->parent->keys[child_inter_num - 1] = left_inter_node->keys.back();
+					del_inter_pos->parent->keys[child_inter_num - 1] = left_inter_node->keys.back(); // 借完后修改其父节点相应的key
 
 					del_inter_pos->keys_num++;
 					left_inter_node->children.erase(left_inter_node->children.end() - 1);
@@ -447,9 +394,6 @@ void BPlusTree::remove_data(int key) {
 
 						delete del_inter_pos; // 释放内存
 						del_inter_pos = left_inter_node;
-
-
-
 					}
 					else if (right_inter_node != NULL && right_inter_node->keys_num < this->min_order) {
 						// 和右兄弟合并，将当前节点信息插入到右兄弟的头部
@@ -475,41 +419,40 @@ void BPlusTree::remove_data(int key) {
 				this->bpt_root = del_inter_pos;
 				return;
 			}
-
 		}
 	}
 	//cout << "FINSIH_remove: " << key << endl;
-
 }
 
 void BPlusTree::print_tree() { // 打印整个B+树
 	int level = 1;
 	BPT_Node* p = this->bpt_root;
+	if (p==NULL){
+		cerr<<"B+树为空"<<endl;
+		return;
+	}
 	queue<BPT_Node*> que;
-	que.push(NULL);
 	que.push(p);
+	que.push(NULL); // NULL充当 一层节点全部打印完毕的标识符，用来指示打印的时候输出换行符
 	while (!que.empty()) {
 		BPT_Node* head = que.front();
-
-		if (head == NULL) {
-			cout << endl;
-			que.pop();
-			if (!que.front()->is_leaf)
-				que.push(NULL);
+		if (head == NULL) { // 当NULL位于队首时表明该层节点已经全部打印完毕
+			cout << endl; // 打印换行符
+			que.pop(); 
+			if (!que.front()->is_leaf) // 如果队首节点是内部节点，表明其还有下层节点，所以需要再插入一个NULL
+				que.push(NULL); // 当前层节点打印完毕，同时该层节点的所有儿子节点也全部压入队列，所以插入一个NULL标识下层节点结束的位置
 			continue;
 		}
-
 		if (head->is_leaf == false) {
 			bool flag = true;
 			for (auto it = head->keys.begin(); it != head->keys.end(); it++) {
 				flag = false;
-				cout << head->keys_num << ':' << *it << ' ';
+				cout << *it << ' ';
 			}
 			if (flag) {
 				cout << head->keys_num << endl;
 			}
-			cout << "$ ";
-
+			cout << "$ "; // $表示一个内部节点打印结束
 			for (auto it = ((Internal_Node*)head)->children.begin(); it != ((Internal_Node*)head)->children.end(); it++) {
 				que.push(*it);
 			}
@@ -520,11 +463,11 @@ void BPlusTree::print_tree() { // 打印整个B+树
 				cout << ((Leaf_Node*)head)->keys[i] << ':' << ((Leaf_Node*)head)->values[i] << ' ';
 			}
 			if (head->keys_num > 0)
-				cout << "| ";
+				cout << "| "; // $表示一个叶子节点打印结束
 			que.pop();
 		}
-		cout << endl;
 	}
+	cout << endl;
 }
 
 void BPlusTree::print_leaves() { // 打印所有叶子节点
@@ -539,7 +482,6 @@ void BPlusTree::print_leaves() { // 打印所有叶子节点
 	cout << endl;
 }
 
-
 void BPlusTree::save_bpt(string filename) {
 	/*
 		将B+树持久化
@@ -549,10 +491,8 @@ void BPlusTree::save_bpt(string filename) {
 	*/
 	if (this->bpt_root == NULL) {
 		cerr << "线程：" << std::this_thread::get_id() << " B+树序列化 出现错误（B+树为空）" << endl;
-
 		return;
 	}
-
 	ofstream outfile;
 	outfile.open(filename, ios::out | ios::trunc);
 	if (!outfile.is_open()) {
@@ -560,13 +500,10 @@ void BPlusTree::save_bpt(string filename) {
 		return;
 	}
 	BPT_Node* node_ptr = this->bpt_root;
-	outfile << this->bpt_order << ' ' << this->min_order << endl;
-
-
+	outfile << this->bpt_order << ' ' << this->min_order << endl; // 保存B+树的序数
 	queue<BPT_Node* > node_que;
 	node_que.push(node_ptr);
 	while (!node_que.empty()) {
-
 		node_ptr = node_que.front();
 		node_que.pop();
 		if (node_ptr->is_leaf) { // 从左到有遍历叶子节点，保存其key和value
@@ -589,32 +526,27 @@ void BPlusTree::save_bpt(string filename) {
 	}
 }
 
-void BPlusTree::read_bpt(string filename) {
+void BPlusTree::read_bpt(string filename) { // 从文件中恢复B+树
 	if (this->bpt_root != NULL) {
 		destory_bpt(); // 不为空时则销毁当前的B+树
 	}
-
 	ifstream inputfile;
 	inputfile.open(filename, ios::in);
 	if (!inputfile.is_open()) {
 		cerr << "线程：" << std::this_thread::get_id() << " B+树反序列化 出现错误（文件打开失败）" << endl;
 		return;
 	}
-
 	string line;
 	getline(inputfile, line);
 	istringstream node_message(line);
-
 	node_message >> this->bpt_order >> this->min_order;
 	// 文件首行保存的是b+树的orders
-	cout << this->bpt_order << " " << this->min_order << endl;
 
 	queue<BPT_Node* > node_queue; //保存上层节点信息，用来建立子节点和父节点的联系
 	Leaf_Node* pre_leaf = NULL; //保存当前叶子节点的前一个叶子节点信息，用来建立叶子节点之间的双向链表
 	while (getline(inputfile, line)) { //保存b+树时，节点数据按行在文件中保存，因此读取时按行进行读取
 		bool is_leaf;
 		int keys_num;
-
 		node_message.clear();
 		node_message.str(line);
 		node_message >> is_leaf >> keys_num;
@@ -628,10 +560,7 @@ void BPlusTree::read_bpt(string filename) {
 				cerr << "线程：" << std::this_thread::get_id() << " read_bpt操作错误（内存分配失败）" << memExp.what() << endl;
 				return;
 			}
-			// if (new_leaf_node == NULL) {
-			// 	cerr <<"线程："<< std::this_thread::get_id()<< " read_bpt操作错误（内存分配失败）" << endl;
-			// 	return;
-			// }			
+		
 			new_leaf_node->is_leaf = true;
 			new_leaf_node->keys_num = keys_num;
 			for (int i = 0; i < keys_num; i++) {
@@ -641,15 +570,20 @@ void BPlusTree::read_bpt(string filename) {
 				new_leaf_node->values.push_back(value);
 				//将文件中叶子节点的关键码和键值读取到Leaf_Node中
 			}
-			Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // 寻找其父节点
-			if (parent_node->keys_num + 1 == parent_node->children.size()) {
-				node_queue.pop(); // 队首节点的childern已满，所以队首下一个节点才是该节点的父节点
-				parent_node = (Internal_Node*)node_queue.front();
+			if(node_queue.empty()){ // 该叶子节点为根节点
+				new_leaf_node->parent = NULL;
+				this->bpt_root=new_leaf_node;
 			}
-			new_leaf_node->parent = parent_node;
-			parent_node->children.push_back(new_leaf_node);
-			// 叶子节点不需要添加到node_queue中，因为其没有儿子节点
-
+			else{
+				Internal_Node* parent_node = (Internal_Node*)node_queue.front(); // 寻找其父节点
+				if (parent_node->keys_num + 1 == parent_node->children.size()) {
+					node_queue.pop(); // 队首节点的childern已满，所以队首下一个节点才是该节点的父节点
+					parent_node = (Internal_Node*)node_queue.front();
+				}
+				new_leaf_node->parent = parent_node;
+				parent_node->children.push_back(new_leaf_node);
+				// 叶子节点不需要添加到node_queue中，因为其没有儿子节点
+			}
 			if (pre_leaf == NULL) { // 该节点是第一个叶子节点，处于队首
 				this->leaves_head = new_leaf_node;
 				new_leaf_node->pre = NULL;
@@ -674,10 +608,6 @@ void BPlusTree::read_bpt(string filename) {
 				return;
 			}
 
-			// if (new_inter_node == NULL) {
-			// 	cerr <<"线程："<< std::this_thread::get_id()<< " read_bpt操作错误（内存分配失败）" << endl;
-			// 	return;
-			// }	
 			new_inter_node->is_leaf = false;
 			new_inter_node->keys_num = keys_num;
 			for (int i = 0; i < keys_num; i++) { //从文件中读取内部节点的关键码，插入到Internal_Node中
@@ -731,9 +661,7 @@ void BPlusTree::destory_bpt() {
 	return;
 }
 
-
-void BPlusTree::add_command(MyCommand com) {
-
+void BPlusTree::add_command(MyCommand com) { // 向缓冲区中添加任务
 	unique_lock<mutex> pvlock(this->pv_mtx); // 获得互斥锁
 	while ((this->TaskBuffer).size() == this->buffer_size) {
 		// 命令缓存区已满
@@ -745,20 +673,17 @@ void BPlusTree::add_command(MyCommand com) {
 	(this->buffer_not_empty).notify_all();
 	// 缓存区不为空，唤醒被阻塞的消费者线程
 	//pvlock.unlock();
-
 }
 
-void BPlusTree::take_command() {
+void BPlusTree::take_command() { // 从缓冲区中取出任务并执行
 	unique_lock<mutex> pvlock(this->pv_mtx); // 获得互斥锁
 	while ((this->TaskBuffer).size() == 0) {
 		// cout << "消费者线程：" << std::this_thread::get_id() << " 被阻塞（缓存区为空）" << endl;
 		(this->buffer_not_empty).wait(pvlock);
 	}
-
 	MyCommand com = (this->TaskBuffer).front();
 	// cout << "消费者线程：" << com.operation << ": " << com.key << endl;
 	(this->TaskBuffer).pop();
-
 	if (com.operation == "insert") {
 		this->insert_data(com.key, com.value);
 	}
@@ -770,12 +695,10 @@ void BPlusTree::take_command() {
 	}
 	else if (com.operation == "search") {
 		this->search_data(com.key);
-
 	}
 	else {
 		cerr << "消费者线程：" << std::this_thread::get_id() << " 读取到非法命令:" << com.operation << endl;
 	}
-
 	(this->buffer_not_full).notify_all();
 	//pvlock.unlock();
 }
@@ -818,7 +741,6 @@ void BPlusTree::multi_remove(int key)
 	com.value = -1;
 	add_command(com);
 }
-
 void BPlusTree::consume_task() {
 	unique_lock<mutex> consumer_lock(this->consumed_mtx);
 	take_command();

@@ -12,3 +12,14 @@ b_plus_tree.o: b_plus_tree.cpp b_plus_tree.h
 
 clean:
 	rm test test.o b_plus_tree.o
+
+
+# test: test.o
+# 	g++ -o test test.o -lbpt -lpthread 
+
+# test.o: test.cpp b_plus_tree.h
+# 	g++ -c test.cpp 
+
+# .PHONY:clean
+# clean:
+# 	rm test test.o

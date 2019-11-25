@@ -7,7 +7,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
-
 class BPT_Node
 {
 public:
@@ -16,7 +15,6 @@ public:
 	int keys_num; // 节点中key的数量
 	bool is_leaf; // 是否为叶子节点
 };
-
 class Leaf_Node : public BPT_Node // 叶子节点
 {
 public:
@@ -42,17 +40,12 @@ public:
 		parent = NULL;
 	}
 };
-
-
 struct MyCommand // 保存操作类型
 {
 	std::string operation;
 	int key;
 	int value;
 };
-
-
-
 class BPlusTree // B+树
 {
 public:
@@ -71,13 +64,10 @@ public:
 	int search_data(int key); // 查到key所对应的value
 	void remove_data(int key); // 删除key所对应的数据
 	void destory_bpt(); // 销毁B+树
-
 	void save_bpt(std::string filename); // 将B+树保存到磁盘中
 	void read_bpt(std::string filename); // 从磁盘中恢复B+树
-
 	void print_leaves(); // 打印叶子节点
 	void print_tree(); // 打印整个B+树
-
 	// 并发操作
 	void set_buffersize(int bsize) {
 		this->buffer_size = bsize;
@@ -102,7 +92,6 @@ private:
 	// 用于并发
 	int buffer_size; // 资源信号量
 	std::queue<MyCommand> TaskBuffer; // 缓存区
-
 	std::mutex produced_mtx; // 生产者之间互斥
 	std::mutex consumed_mtx; // 消费者之间互斥
 	std::mutex pv_mtx; // 生产者消费者之间互斥
@@ -110,8 +99,5 @@ private:
 	std::condition_variable buffer_not_empty; // 缓存区是否空
 	void add_command(MyCommand com); // 生产者线程：向缓存区中添加task
 	void take_command(); // 消费者线程：从缓存区中取出task并执行
-
-
 };
-
 #endif
